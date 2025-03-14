@@ -77,14 +77,14 @@ header {
   z-index: 1000;
 }
 
-/* Animacja znikania – fade out i skalowanie do zera */
+/* Animacja znikania – fade out oraz skalowanie */
 .cell.disappear {
   opacity: 0;
   transform: scale(0);
   transition: opacity 0.3s ease, transform 0.3s ease;
 }
 
-/* Animacja opadania nowych kafelek */
+/* Animacja opadania – nowe emoji pojawiają się z lekkim przesunięciem z góry */
 .cell.drop {
   animation: dropIn 0.5s ease;
 }
