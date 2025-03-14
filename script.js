@@ -38,7 +38,7 @@ document.addEventListener("DOMContentLoaded", function() {
   let board = [];
   let selectedCell = null;
   let username = "";
-  let availableMoves = 50;  // Na początku przyznajemy graczowi 50 ruchów
+  let availableMoves = 50;  // Na początku gracz otrzymuje 50 ruchów
 
   // ===============================
   // ELEMENTY DOM
@@ -99,7 +99,7 @@ document.addEventListener("DOMContentLoaded", function() {
       const currentEmojis = getCurrentEmojiTypes();
       safeGoal = {};
       progress = {};
-      // Dla każdego emoji przypisujemy inny cel – bazowy cel + (indeks * 2)
+      // Dla każdego emoji cel = bazowy cel + (indeks * 2)
       for (let i = 0; i < currentEmojis.length; i++) {
         safeGoal[currentEmojis[i]] = getTargetForLevel(currentLevel) + i * 2;
         progress[currentEmojis[i]] = 0;
@@ -107,7 +107,6 @@ document.addEventListener("DOMContentLoaded", function() {
       initBoard();
       availableMoves = 50; // Na starcie zawsze 50 ruchów
     } else {
-      // Przy wczytaniu stanu gry przywracamy interaktywność planszy
       boardElement.style.pointerEvents = "auto";
     }
     renderBoard();
@@ -124,7 +123,6 @@ document.addEventListener("DOMContentLoaded", function() {
       let row = [];
       for (let c = 0; c < boardSize; c++) {
         let possibleEmojis = [...currentEmojis];
-        // Zapobiegamy pojawieniu się trzech takich samych obok siebie
         if (c >= 2 && row[c - 1] === row[c - 2]) {
           possibleEmojis = possibleEmojis.filter(e => e !== row[c - 1]);
         }
@@ -196,7 +194,7 @@ document.addEventListener("DOMContentLoaded", function() {
         return;
       }
       if (isAdjacent(selectedCell.r, selectedCell.c, r, c)) {
-        availableMoves--;  // Odejmujemy ruch tylko, gdy swap jest wykonywany
+        availableMoves--;  
         updateMovesDisplay();
         swapCells(selectedCell.r, selectedCell.c, r, c);
         selectedCell.element.classList.remove("selected");
@@ -261,7 +259,7 @@ document.addEventListener("DOMContentLoaded", function() {
       if (matches.length > 0) {
         processMatches(matches);
       } else {
-        // Jeżeli ruch nie tworzy sekwencji – cofamy swap (ruch zostaje zużyty)
+        // Jeśli ruch nie tworzy sekwencji – cofamy swap (ruch zostaje zużyty)
         const newCell1 = document.querySelector(`.cell[data-row='${r1}'][data-col='${c1}']`);
         const newCell2 = document.querySelector(`.cell[data-row='${r2}'][data-col='${c2}']`);
         animateSwap(newCell1, newCell2, () => {
@@ -273,11 +271,11 @@ document.addEventListener("DOMContentLoaded", function() {
   }
 
   // ===============================
-  // MATCH-3 LOGIKA
+  // MATCH-3 LOGIKA – animacja znikania i opadania kafelek
   // ===============================
   function findMatches() {
     let matches = [];
-    // Sprawdzanie rzędów
+    // Sprawdzenie rzędów
     for (let r = 0; r < boardSize; r++) {
       let count = 1;
       for (let c = 1; c < boardSize; c++) {
@@ -298,7 +296,7 @@ document.addEventListener("DOMContentLoaded", function() {
         }
       }
     }
-    // Sprawdzanie kolumn
+    // Sprawdzenie kolumn
     for (let c = 0; c < boardSize; c++) {
       let count = 1;
       for (let r = 1; r < boardSize; r++) {
@@ -319,7 +317,7 @@ document.addEventListener("DOMContentLoaded", function() {
         }
       }
     }
-    // Usuwanie duplikatów
+    // Usunięcie duplikatów
     let uniqueMatches = [];
     let seen = {};
     for (let m of matches) {
@@ -332,17 +330,70 @@ document.addEventListener("DOMContentLoaded", function() {
     return uniqueMatches;
   }
 
+  // Animacja znikania – dodajemy klasę .disappear, czekamy i potem stosujemy grawitację
   function processMatches(matches) {
+    let matchedCoords = new Set();
     for (let match of matches) {
+      matchedCoords.add(`${match.r},${match.c}`);
       let e = board[match.r][match.c];
       if (progress.hasOwnProperty(e)) {
         progress[e]++;
       }
-      board[match.r][match.c] = randomEmoji();
     }
-    renderBoard();
-    updateGoalDisplay();
-    checkVictory();
+    document.querySelectorAll('.cell').forEach(cell => {
+      let r = cell.dataset.row;
+      let c = cell.dataset.col;
+      if (matchedCoords.has(`${r},${c}`)) {
+        cell.classList.add("disappear");
+      }
+    });
+    setTimeout(() => {
+      // Ustawiamy komórki z matchami na null
+      for (let match of matches) {
+        board[match.r][match.c] = null;
+      }
+      applyGravity();
+      renderBoard();
+      // Dodaj animację opadania – klasa .drop
+      document.querySelectorAll('.cell').forEach(cell => {
+        cell.classList.add("drop");
+      });
+      setTimeout(() => {
+        document.querySelectorAll('.cell').forEach(cell => {
+          cell.classList.remove("drop");
+        });
+      }, 500);
+      updateGoalDisplay();
+      checkVictory();
+    }, 300);
+  }
+
+  // Funkcja grawitacji – przesuwa kafelki w dół i uzupełnia nowe na górze
+  function applyGravity() {
+    for (let col = 0; col < boardSize; col++) {
+      let emptySpaces = 0;
+      for (let row = boardSize - 1; row >= 0; row--) {
+        if (board[row][col] == null) {
+          emptySpaces++;
+        } else if (emptySpaces > 0) {
+          board[row + emptySpaces][col] = board[row][col];
+          board[row][col] = null;
+        }
+      }
+      // Uzupełnij puste miejsca na górze
+      for (let row = 0; row < emptySpaces; row++) {
+        board[row][col] = randomEmoji();
+      }
+    }
+  }
+
+  function processCascades() {
+    // Opcjonalnie: tutaj można sprawdzić, czy po opadnięciu powstały nowe sekwencje,
+    // i wywołać processMatches ponownie.
+    const newMatches = findMatches();
+    if (newMatches.length > 0) {
+      processMatches(newMatches);
+    }
   }
 
   function randomEmoji() {
@@ -371,7 +422,7 @@ document.addEventListener("DOMContentLoaded", function() {
     }
   }
 
-  // Zamiast klonowania planszy, wyłączamy interakcję na niej (pointerEvents = "none")
+  // Wyłączenie interakcji na planszy – zamiast klonowania, ustawiamy pointerEvents = "none"
   function disableBoard() {
     boardElement.style.pointerEvents = "none";
   }
@@ -383,7 +434,6 @@ document.addEventListener("DOMContentLoaded", function() {
     setTimeout(() => {
       safeContainer.classList.add("show");
     }, 50);
-    
     setTimeout(() => {
       safeElement.textContent = "🔓";
       messageElement.textContent = "Poziom ukończony! Przechodzisz do kolejnego...";
@@ -398,12 +448,11 @@ document.addEventListener("DOMContentLoaded", function() {
     const currentEmojis = getCurrentEmojiTypes();
     safeGoal = {};
     progress = {};
-    // Dla każdego emoji przypisujemy inny cel – bazowy cel + (indeks * 2)
     for (let i = 0; i < currentEmojis.length; i++) {
       safeGoal[currentEmojis[i]] = getTargetForLevel(currentLevel) + i * 2;
       progress[currentEmojis[i]] = 0;
     }
-    // Przy następnym poziomie przywracamy interakcję na planszy
+    // Przy następnym poziomie gracz zachowuje ruchy – nie resetujemy availableMoves
     boardElement.style.pointerEvents = "auto";
     initBoard();
     renderBoard();
@@ -411,6 +460,8 @@ document.addEventListener("DOMContentLoaded", function() {
     updateMovesDisplay();
     saveGameState();
     messageElement.textContent = "";
+    // Opcjonalnie: sprawdzenie kaskady matchy
+    processCascades();
   }
 
   // ===============================
@@ -436,7 +487,6 @@ document.addEventListener("DOMContentLoaded", function() {
     if (name) {
       username = name;
       localStorage.setItem("username", username);
-      // Usuwamy zapisany stan gry, aby zacząć nową rozgrywkę
       localStorage.removeItem("gameState");
       usernameModal.style.display = 'none';
       gameContainer.style.display = 'block';
@@ -447,7 +497,6 @@ document.addEventListener("DOMContentLoaded", function() {
     }
   });
 
-  // Jeśli użytkownik już podał nazwę – ładujemy ją i uruchamiamy grę
   const savedName = localStorage.getItem("username");
   if (savedName) {
     username = savedName;
@@ -457,6 +506,5 @@ document.addEventListener("DOMContentLoaded", function() {
     initGame();
   }
   
-  // Zapis stanu gry przy opuszczeniu strony
   window.addEventListener("beforeunload", saveGameState);
 });
