@@ -5,19 +5,19 @@ document.addEventListener("DOMContentLoaded", function() {
   // KONFIGURACJA GRY
   // ===============================
   const boardSize = 6;
-  // Rozszerzona baza emoji – owoce, warzywa i kilka innych pozytywnych symboli
+  // Rozszerzona baza emoji – owoce, warzywa oraz kilka innych symboli
   const emojis = [
     "🍌", "🍎", "🍓", "🍇", "🍒", "🍊", "🍍", "🥝", "🍑", "🍉",
     "🍏", "🥭", "🍐", "🍋", "🥥", "🍅", "🥑", "🍆", "🌽", "🥕",
     "🍔", "🍟", "🍕", "🌭", "🥪", "🍜", "🍣", "🍩", "🍪", "☕"
   ];
 
-  // Funkcja obliczająca bazowy cel dla danego poziomu (liniowo od 3 do 100 na poziomie 1000)
+  // Funkcja obliczająca bazowy cel dla poziomu (liniowo od 3 do 100 przy poziomie 1000)
   function getTargetForLevel(level) {
     return Math.floor(3 + (level - 1) * (100 - 3) / (1000 - 1));
   }
 
-  // Funkcja określająca liczbę typów emoji używanych w danym poziomie:
+  // Funkcja określająca liczbę typów emoji używanych w poziomie:
   // Na poziomie 1: 4 typy, na poziomie 1000: 20 typów (liniowo)
   function getNumEmojiTypesForLevel(level) {
     return Math.min(20, 4 + Math.floor((level - 1) * (20 - 4) / (1000 - 1)));
@@ -33,12 +33,12 @@ document.addEventListener("DOMContentLoaded", function() {
   // ZMIENNE GLOBALNE
   // ===============================
   let currentLevel = 1;
-  let safeGoal = {};   // cel dla każdego emoji (różne dla każdego typu)
+  let safeGoal = {};   // cel dla każdego emoji (dla każdego typu inny)
   let progress = {};   // postęp zbierania dla każdego emoji
   let board = [];
   let selectedCell = null;
   let username = "";
-  let availableMoves = 50;  // na początku przyznajemy 50 ruchów
+  let availableMoves = 50;  // Na początku przyznajemy graczowi 50 ruchów
 
   // ===============================
   // ELEMENTY DOM
@@ -99,13 +99,16 @@ document.addEventListener("DOMContentLoaded", function() {
       const currentEmojis = getCurrentEmojiTypes();
       safeGoal = {};
       progress = {};
-      // Dla każdego emoji przypisujemy cel – każdy inny, np. baza + i*2
+      // Dla każdego emoji przypisujemy inny cel – bazowy cel + (indeks * 2)
       for (let i = 0; i < currentEmojis.length; i++) {
         safeGoal[currentEmojis[i]] = getTargetForLevel(currentLevel) + i * 2;
         progress[currentEmojis[i]] = 0;
       }
       initBoard();
-      availableMoves = 50; // ustawiamy 50 ruchów na starcie
+      availableMoves = 50; // Na starcie zawsze 50 ruchów
+    } else {
+      // Przy wczytaniu stanu gry przywracamy interaktywność planszy
+      boardElement.style.pointerEvents = "auto";
     }
     renderBoard();
     updateGoalDisplay();
@@ -113,7 +116,7 @@ document.addEventListener("DOMContentLoaded", function() {
     updateUserDisplay();
   }
 
-  // Inicjalizacja planszy – generujemy planszę z użyciem bieżącego zbioru emoji
+  // Inicjalizacja planszy – generujemy planszę na podstawie bieżącego zbioru emoji
   function initBoard() {
     const currentEmojis = getCurrentEmojiTypes();
     board = [];
@@ -121,7 +124,7 @@ document.addEventListener("DOMContentLoaded", function() {
       let row = [];
       for (let c = 0; c < boardSize; c++) {
         let possibleEmojis = [...currentEmojis];
-        // Zapobiegamy pojawianiu się trzech takich samych emoji obok siebie
+        // Zapobiegamy pojawieniu się trzech takich samych obok siebie
         if (c >= 2 && row[c - 1] === row[c - 2]) {
           possibleEmojis = possibleEmojis.filter(e => e !== row[c - 1]);
         }
@@ -193,7 +196,7 @@ document.addEventListener("DOMContentLoaded", function() {
         return;
       }
       if (isAdjacent(selectedCell.r, selectedCell.c, r, c)) {
-        availableMoves--;  // odejmujemy jeden ruch tylko wtedy, gdy swap jest wykonywany
+        availableMoves--;  // Odejmujemy ruch tylko, gdy swap jest wykonywany
         updateMovesDisplay();
         swapCells(selectedCell.r, selectedCell.c, r, c);
         selectedCell.element.classList.remove("selected");
@@ -251,14 +254,14 @@ document.addEventListener("DOMContentLoaded", function() {
     const cell1 = document.querySelector(`.cell[data-row='${r1}'][data-col='${c1}']`);
     const cell2 = document.querySelector(`.cell[data-row='${r2}'][data-col='${c2}']`);
     animateSwap(cell1, cell2, () => {
-      // Zamieniamy wartości w planszy
+      // Zamiana wartości w planszy
       [board[r1][c1], board[r2][c2]] = [board[r2][c2], board[r1][c1]];
       renderBoard();
       const matches = findMatches();
       if (matches.length > 0) {
         processMatches(matches);
       } else {
-        // Jeżeli ruch nie utworzył sekwencji – cofamy zamianę (ruch został już odjęty)
+        // Jeżeli ruch nie tworzy sekwencji – cofamy swap (ruch zostaje zużyty)
         const newCell1 = document.querySelector(`.cell[data-row='${r1}'][data-col='${c1}']`);
         const newCell2 = document.querySelector(`.cell[data-row='${r2}'][data-col='${c2}']`);
         animateSwap(newCell1, newCell2, () => {
@@ -274,7 +277,7 @@ document.addEventListener("DOMContentLoaded", function() {
   // ===============================
   function findMatches() {
     let matches = [];
-    // Sprawdzamy rzedy
+    // Sprawdzanie rzędów
     for (let r = 0; r < boardSize; r++) {
       let count = 1;
       for (let c = 1; c < boardSize; c++) {
@@ -295,7 +298,7 @@ document.addEventListener("DOMContentLoaded", function() {
         }
       }
     }
-    // Sprawdzamy kolumny
+    // Sprawdzanie kolumn
     for (let c = 0; c < boardSize; c++) {
       let count = 1;
       for (let r = 1; r < boardSize; r++) {
@@ -316,7 +319,7 @@ document.addEventListener("DOMContentLoaded", function() {
         }
       }
     }
-    // Usuwamy duplikaty
+    // Usuwanie duplikatów
     let uniqueMatches = [];
     let seen = {};
     for (let m of matches) {
@@ -368,9 +371,9 @@ document.addEventListener("DOMContentLoaded", function() {
     }
   }
 
+  // Zamiast klonowania planszy, wyłączamy interakcję na niej (pointerEvents = "none")
   function disableBoard() {
-    const newBoard = boardElement.cloneNode(true);
-    boardElement.parentNode.replaceChild(newBoard, boardElement);
+    boardElement.style.pointerEvents = "none";
   }
 
   function openSafeAnimation() {
@@ -395,22 +398,19 @@ document.addEventListener("DOMContentLoaded", function() {
     const currentEmojis = getCurrentEmojiTypes();
     safeGoal = {};
     progress = {};
-    // Każdemu emoji przypisujemy inny cel – bazowy cel + (indeks * 2)
+    // Dla każdego emoji przypisujemy inny cel – bazowy cel + (indeks * 2)
     for (let i = 0; i < currentEmojis.length; i++) {
       safeGoal[currentEmojis[i]] = getTargetForLevel(currentLevel) + i * 2;
       progress[currentEmojis[i]] = 0;
     }
-    // UWAGA: nie resetujemy availableMoves – gracz zachowuje swoje ruchy
-    const safeContainer = document.getElementById("safe-container");
-    safeContainer.classList.remove("show");
-    safeContainer.classList.add("hidden");
-    document.getElementById("safe").textContent = "🔒";
-    messageElement.textContent = "";
+    // Przy następnym poziomie przywracamy interakcję na planszy
+    boardElement.style.pointerEvents = "auto";
     initBoard();
     renderBoard();
     updateGoalDisplay();
     updateMovesDisplay();
     saveGameState();
+    messageElement.textContent = "";
   }
 
   // ===============================
