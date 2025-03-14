@@ -13,7 +13,7 @@ document.addEventListener("DOMContentLoaded", function() {
   ];
   const OBSTACLE = "🧱";
   const BONUS = "⭐";
-
+  
   // Bazowy cel – rośnie liniowo (od 3 do 100 przy poziomie 1000)
   function getTargetForLevel(level) {
     return Math.floor(3 + (level - 1) * (100 - 3) / (1000 - 1));
@@ -32,8 +32,8 @@ document.addEventListener("DOMContentLoaded", function() {
   
   // ===============================
   // DODATKOWA FUNKCJA: generowanie nowego kafelka
-  // Filtruje kandydatów, aby nowe kafelki nie tworzyły od razu matchu.
-  // Z pewną szansą zwraca BONUS.
+  // Wybiera spośród bieżącego zbioru, filtrując kandydatów, którzy mogliby od razu utworzyć match.
+  // Z 10% szansą zwraca BONUS.
   function generateNewTile(row, col) {
     const currentEmojis = getCurrentEmojiTypes();
     let candidates = currentEmojis.slice();
@@ -51,7 +51,6 @@ document.addEventListener("DOMContentLoaded", function() {
         candidates = candidates.filter(e => e !== belowEmoji);
       }
     }
-    // Szansa na bonus: 10%
     if (Math.random() < 0.1) {
       return BONUS;
     }
@@ -78,6 +77,22 @@ document.addEventListener("DOMContentLoaded", function() {
   }
   
   // ===============================
+  // DODATKOWA FUNKCJA: usuwanie przeszkód – po obejrzeniu reklamy
+  function removeObstacles() {
+    for (let r = 0; r < boardSize; r++) {
+      for (let c = 0; c < boardSize; c++) {
+        if (board[r][c] === OBSTACLE) {
+          board[r][c] = null;
+        }
+      }
+    }
+    applyGravity();
+    renderBoard();
+    // Po usunięciu przeszkód, schowujemy kontener reklamy przeszkód
+    adObstacleElement.classList.add("hidden");
+  }
+  
+  // ===============================
   // ZMIENNE GLOBALNE
   // ===============================
   let currentLevel = 1;
@@ -86,7 +101,7 @@ document.addEventListener("DOMContentLoaded", function() {
   let board = [];
   let selectedCell = null;
   let username = "";
-  let availableMoves = 50;  // Na początku 50 ruchów
+  let availableMoves = 50;  // Na początku gracz ma 50 ruchów
   
   // ===============================
   // ELEMENTY DOM
@@ -96,6 +111,9 @@ document.addEventListener("DOMContentLoaded", function() {
   const movesCounterElement = document.getElementById("moves-counter");
   const adMessageElement = document.getElementById("ad-message");
   const adBtn = document.getElementById("ad-btn");
+  // Nowy element dla reklamy do usunięcia przeszkód
+  const adObstacleElement = document.getElementById("ad-obstacle");
+  const adObstacleBtn = document.getElementById("ad-obstacle-btn");
   const messageElement = document.getElementById("message");
   const userDisplay = document.getElementById("user-display");
   const usernameModal = document.getElementById("username-modal");
@@ -219,6 +237,12 @@ document.addEventListener("DOMContentLoaded", function() {
         }
         boardElement.appendChild(cell);
       }
+    }
+    // Jeśli na planszy są przeszkody, pokaż przycisk reklamy do ich usunięcia
+    if (board.flat().includes(OBSTACLE)) {
+      adObstacleElement.classList.remove("hidden");
+    } else {
+      adObstacleElement.classList.add("hidden");
     }
     saveGameState();
   }
@@ -406,7 +430,7 @@ document.addEventListener("DOMContentLoaded", function() {
     return uniqueMatches;
   }
   
-  // Animacja znikania – dodajemy klasę .disappear, następnie stosujemy grawitację i animację drop
+  // Animacja znikania – dodajemy klasę .disappear, następnie grawitacja i animacja drop
   function processMatches(matches) {
     let matchedCoords = new Set();
     for (let match of matches) {
@@ -421,7 +445,7 @@ document.addEventListener("DOMContentLoaded", function() {
         }
       }
     }
-    // Usuń także przeszkody, które sąsiadują z trafionymi kafelkami
+    // Usuwamy również przeszkody sąsiadujące z trafionymi kafelkami
     for (let r = 0; r < boardSize; r++) {
       for (let c = 0; c < boardSize; c++) {
         if (board[r][c] === OBSTACLE) {
@@ -466,7 +490,7 @@ document.addEventListener("DOMContentLoaded", function() {
     }, 300);
   }
   
-  // Grawitacja – przesuwamy kafelki w dół, a puste miejsca uzupełniamy nowymi (przy użyciu generateNewTile)
+  // Grawitacja – przesuwamy kafelki w dół i uzupełniamy puste miejsca nowymi (przy użyciu generateNewTile)
   function applyGravity() {
     for (let col = 0; col < boardSize; col++) {
       let emptySpaces = 0;
@@ -516,7 +540,7 @@ document.addEventListener("DOMContentLoaded", function() {
     boardElement.style.pointerEvents = "none";
   }
   
-  // Animacja otwierania sejfu – zmiana ikony z 🔒 na 🔓, potem przejście do kolejnego poziomu
+  // Animacja otwierania sejfu – zmiana ikony z 🔒 na 🔓, a potem przejście do kolejnego poziomu
   function openSafeAnimation() {
     const safeContainer = document.getElementById("safe-container");
     const safeElement = document.getElementById("safe");
@@ -533,7 +557,7 @@ document.addEventListener("DOMContentLoaded", function() {
     }, 600);
   }
   
-  // W kolejnym poziomie – resetujemy cele (safeGoal, progress) oraz zamykamy sejf (ikona 🔒)
+  // W kolejnym poziomie – resetujemy cele (safeGoal i progress), zamykamy sejf (ikona 🔒) i odświeżamy planszę
   function nextLevel() {
     currentLevel++;
     const currentEmojis = getCurrentEmojiTypes();
@@ -563,7 +587,7 @@ document.addEventListener("DOMContentLoaded", function() {
   }
   
   // ===============================
-  // OBSŁUGA DODATKOWYCH RUCHÓW PRZEZ REKLAMĘ
+  // OBSŁUGA DODATKOWYCH RUCHÓW PRZEZ REKLAMĘ (dla ruchów)
   // ===============================
   function showAdMessage() {
     adMessageElement.classList.remove("hidden");
@@ -573,6 +597,15 @@ document.addEventListener("DOMContentLoaded", function() {
     availableMoves += 50;
     updateMovesDisplay();
     adMessageElement.classList.add("hidden");
+    saveGameState();
+  });
+  
+  // ===============================
+  // OBSŁUGA REKLAMY DO USUWANIA PRZESZKÓD
+  // ===============================
+  adObstacleBtn.addEventListener("click", function() {
+    removeObstacles();
+    updateMovesDisplay();
     saveGameState();
   });
   
