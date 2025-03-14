@@ -30,11 +30,11 @@ document.addEventListener("DOMContentLoaded", function() {
 
   // ===============================
   // DODATKOWA FUNKCJA: generowanie nowego emoji
-  // wybieramy spośród bieżącego zbioru, filtrując te, które mogłyby spowodować natychmiastowy match.
+  // Takie, aby nowe kafelki nie tworzyły od razu matchu.
   function generateNewTile(row, col) {
     const currentEmojis = getCurrentEmojiTypes();
     let candidates = currentEmojis.slice();
-    // Sprawdzenie lewej strony (jeśli są 2 kafelki z lewej)
+    // Sprawdzamy lewą stronę – jeśli dwa sąsiadujące po lewej mają ten sam symbol, filtrujemy go
     if (col >= 2) {
       const leftEmoji = board[row][col-1];
       const leftEmoji2 = board[row][col-2];
@@ -42,7 +42,7 @@ document.addEventListener("DOMContentLoaded", function() {
         candidates = candidates.filter(e => e !== leftEmoji);
       }
     }
-    // Sprawdzenie kafelków poniżej (jeśli są 2 kafelki poniżej – ponieważ nowe kafelki będą pojawiać się u góry)
+    // Sprawdzamy poniżej – jeśli dwa kafelki poniżej są takie same, filtrujemy je
     if (row <= boardSize - 3) {
       const belowEmoji = board[row+1][col];
       const belowEmoji2 = board[row+2][col];
@@ -61,7 +61,7 @@ document.addEventListener("DOMContentLoaded", function() {
   // ZMIENNE GLOBALNE
   // ===============================
   let currentLevel = 1;
-  let safeGoal = {};   // Dla każdego emoji inny cel (bazowy + indeks*2)
+  let safeGoal = {};   // Dla każdego emoji inny cel (bazowy cel * (1 + 0.2 * indeks))
   let progress = {};   // Postęp zbierania
   let board = [];
   let selectedCell = null;
@@ -118,7 +118,7 @@ document.addEventListener("DOMContentLoaded", function() {
   }
 
   // ===============================
-  // Funkcja pokazująca zachętę po matchu
+  // Funkcja zachęcająca – wyświetla komunikat po matchu
   // ===============================
   function showEncouragement() {
     const messages = ["Świetnie!", "Super!", "Tak trzymaj!", "Rewelacja!", "Brawo!"];
@@ -142,9 +142,9 @@ document.addEventListener("DOMContentLoaded", function() {
       const currentEmojis = getCurrentEmojiTypes();
       safeGoal = {};
       progress = {};
-      // Każdemu emoji przypisujemy cel: bazowy cel + (indeks * 2)
+      // Dla każdego emoji: cel = bazowy cel * (1 + 0.2 * indeks)
       for (let i = 0; i < currentEmojis.length; i++) {
-        safeGoal[currentEmojis[i]] = getTargetForLevel(currentLevel) + i * 2;
+        safeGoal[currentEmojis[i]] = Math.floor(getTargetForLevel(currentLevel) * (1 + i * 0.2));
         progress[currentEmojis[i]] = 0;
       }
       initBoard();
@@ -376,7 +376,7 @@ document.addEventListener("DOMContentLoaded", function() {
     return uniqueMatches;
   }
 
-  // Animacja znikania – dodajemy klasę .disappear, potem stosujemy grawitację i animację drop
+  // Animacja znikania – dodajemy klasę .disappear, następnie stosujemy grawitację i animację drop
   function processMatches(matches) {
     let matchedCoords = new Set();
     for (let match of matches) {
@@ -418,7 +418,7 @@ document.addEventListener("DOMContentLoaded", function() {
     }, 300);
   }
 
-  // Funkcja grawitacji – przesuwamy kafelki w dół i uzupełniamy nowe (przy użyciu generateNewTile)
+  // Grawitacja – przesuwamy kafelki w dół i uzupełniamy nowe (używając generateNewTile)
   function applyGravity() {
     for (let col = 0; col < boardSize; col++) {
       let emptySpaces = 0;
@@ -466,7 +466,7 @@ document.addEventListener("DOMContentLoaded", function() {
     boardElement.style.pointerEvents = "none";
   }
 
-  // Animacja otwierania sejfu – po kilku sekundach przechodzimy do kolejnego poziomu
+  // Animacja otwierania sejfu – po pewnym czasie przechodzimy do kolejnego poziomu
   function openSafeAnimation() {
     const safeContainer = document.getElementById("safe-container");
     const safeElement = document.getElementById("safe");
@@ -483,14 +483,14 @@ document.addEventListener("DOMContentLoaded", function() {
     }, 600);
   }
 
-  // W nowym poziomie – resetujemy cele, przywracamy safe (zamknięty) i przywracamy interakcję
+  // W kolejnym poziomie – resetujemy cele, przywracamy sejf (zamknięty) i interakcję
   function nextLevel() {
     currentLevel++;
     const currentEmojis = getCurrentEmojiTypes();
     safeGoal = {};
     progress = {};
     for (let i = 0; i < currentEmojis.length; i++) {
-      safeGoal[currentEmojis[i]] = getTargetForLevel(currentLevel) + i * 2;
+      safeGoal[currentEmojis[i]] = Math.floor(getTargetForLevel(currentLevel) * (1 + i * 0.2));
       progress[currentEmojis[i]] = 0;
     }
     const safeContainer = document.getElementById("safe-container");
