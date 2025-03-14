@@ -12,18 +12,17 @@ document.addEventListener("DOMContentLoaded", function() {
     "🍔", "🍟", "🍕", "🌭", "🥪", "🍜", "🍣", "🍩", "🍪", "☕"
   ];
 
-  // Funkcja obliczająca bazowy cel dla poziomu (liniowo od 3 do 100 przy poziomie 1000)
+  // Bazowy cel rośnie liniowo (od 3 do 100 na poziomie 1000)
   function getTargetForLevel(level) {
     return Math.floor(3 + (level - 1) * (100 - 3) / (1000 - 1));
   }
 
-  // Funkcja określająca liczbę typów emoji używanych w poziomie:
-  // Na poziomie 1: 4 typy, na poziomie 1000: 20 typów (liniowo)
+  // Liczba typów emoji używanych w poziomie – od 4 do 20
   function getNumEmojiTypesForLevel(level) {
     return Math.min(20, 4 + Math.floor((level - 1) * (20 - 4) / (1000 - 1)));
   }
 
-  // Zwraca aktualnie używane typy emoji (podzbiór z pełnej listy)
+  // Zwraca bieżący zbiór emoji (podzbiór z pełnej listy)
   function getCurrentEmojiTypes() {
     const count = getNumEmojiTypesForLevel(currentLevel);
     return emojis.slice(0, count);
@@ -33,12 +32,12 @@ document.addEventListener("DOMContentLoaded", function() {
   // ZMIENNE GLOBALNE
   // ===============================
   let currentLevel = 1;
-  let safeGoal = {};   // cel dla każdego emoji (dla każdego typu inny)
-  let progress = {};   // postęp zbierania dla każdego emoji
+  let safeGoal = {};   // Dla każdego emoji inny cel (bazowy + indeks*2)
+  let progress = {};   // Postęp zbierania
   let board = [];
   let selectedCell = null;
   let username = "";
-  let availableMoves = 50;  // Na początku gracz otrzymuje 50 ruchów
+  let availableMoves = 50;  // Na początku gracz ma 50 ruchów
 
   // ===============================
   // ELEMENTY DOM
@@ -50,7 +49,6 @@ document.addEventListener("DOMContentLoaded", function() {
   const adBtn = document.getElementById("ad-btn");
   const messageElement = document.getElementById("message");
   const userDisplay = document.getElementById("user-display");
-
   const usernameModal = document.getElementById("username-modal");
   const usernameInput = document.getElementById("username-input");
   const usernameSubmit = document.getElementById("username-submit");
@@ -99,13 +97,13 @@ document.addEventListener("DOMContentLoaded", function() {
       const currentEmojis = getCurrentEmojiTypes();
       safeGoal = {};
       progress = {};
-      // Dla każdego emoji cel = bazowy cel + (indeks * 2)
+      // Każdemu emoji przypisujemy cel: bazowy cel + (indeks * 2)
       for (let i = 0; i < currentEmojis.length; i++) {
         safeGoal[currentEmojis[i]] = getTargetForLevel(currentLevel) + i * 2;
         progress[currentEmojis[i]] = 0;
       }
       initBoard();
-      availableMoves = 50; // Na starcie zawsze 50 ruchów
+      availableMoves = 50;
     } else {
       boardElement.style.pointerEvents = "auto";
     }
@@ -115,7 +113,7 @@ document.addEventListener("DOMContentLoaded", function() {
     updateUserDisplay();
   }
 
-  // Inicjalizacja planszy – generujemy planszę na podstawie bieżącego zbioru emoji
+  // Generowanie planszy – zapobiegamy trzem tym samym obok siebie
   function initBoard() {
     const currentEmojis = getCurrentEmojiTypes();
     board = [];
@@ -194,7 +192,7 @@ document.addEventListener("DOMContentLoaded", function() {
         return;
       }
       if (isAdjacent(selectedCell.r, selectedCell.c, r, c)) {
-        availableMoves--;  
+        availableMoves--;
         updateMovesDisplay();
         swapCells(selectedCell.r, selectedCell.c, r, c);
         selectedCell.element.classList.remove("selected");
@@ -211,6 +209,7 @@ document.addEventListener("DOMContentLoaded", function() {
     return (Math.abs(r1 - r2) + Math.abs(c1 - c2)) === 1;
   }
 
+  // Animacja zamiany – klonujemy elementy i animujemy transformację
   function animateSwap(cell1, cell2, callback) {
     const boardRect = boardElement.getBoundingClientRect();
     const rect1 = cell1.getBoundingClientRect();
@@ -259,7 +258,7 @@ document.addEventListener("DOMContentLoaded", function() {
       if (matches.length > 0) {
         processMatches(matches);
       } else {
-        // Jeśli ruch nie tworzy sekwencji – cofamy swap (ruch zostaje zużyty)
+        // Jeśli ruch nie tworzy sekwencji – cofamy swap (ruch zużyty)
         const newCell1 = document.querySelector(`.cell[data-row='${r1}'][data-col='${c1}']`);
         const newCell2 = document.querySelector(`.cell[data-row='${r2}'][data-col='${c2}']`);
         animateSwap(newCell1, newCell2, () => {
@@ -271,7 +270,7 @@ document.addEventListener("DOMContentLoaded", function() {
   }
 
   // ===============================
-  // MATCH-3 LOGIKA – animacja znikania i opadania kafelek
+  // MATCH-3 LOGIKA – znikanie, grawitacja, opadanie, cascade
   // ===============================
   function findMatches() {
     let matches = [];
@@ -330,7 +329,7 @@ document.addEventListener("DOMContentLoaded", function() {
     return uniqueMatches;
   }
 
-  // Animacja znikania – dodajemy klasę .disappear, czekamy i potem stosujemy grawitację
+  // Dodajemy animację znikania, następnie opadanie kafelek (z animacją drop)
   function processMatches(matches) {
     let matchedCoords = new Set();
     for (let match of matches) {
@@ -340,6 +339,7 @@ document.addEventListener("DOMContentLoaded", function() {
         progress[e]++;
       }
     }
+    // Dodaj klasę disappear do wszystkich trafionych komórek
     document.querySelectorAll('.cell').forEach(cell => {
       let r = cell.dataset.row;
       let c = cell.dataset.col;
@@ -348,13 +348,13 @@ document.addEventListener("DOMContentLoaded", function() {
       }
     });
     setTimeout(() => {
-      // Ustawiamy komórki z matchami na null
+      // Ustawienie trafionych miejsc na null
       for (let match of matches) {
         board[match.r][match.c] = null;
       }
       applyGravity();
       renderBoard();
-      // Dodaj animację opadania – klasa .drop
+      // Dodanie klasy drop dla animacji pojawiania się nowych emoji
       document.querySelectorAll('.cell').forEach(cell => {
         cell.classList.add("drop");
       });
@@ -362,13 +362,20 @@ document.addEventListener("DOMContentLoaded", function() {
         document.querySelectorAll('.cell').forEach(cell => {
           cell.classList.remove("drop");
         });
+        updateGoalDisplay();
+        checkVictory();
+        // Sprawdź kaskadę – jeśli powstały nowe match’e, przetwórz je
+        setTimeout(() => {
+          const newMatches = findMatches();
+          if (newMatches.length > 0) {
+            processMatches(newMatches);
+          }
+        }, 100);
       }, 500);
-      updateGoalDisplay();
-      checkVictory();
     }, 300);
   }
 
-  // Funkcja grawitacji – przesuwa kafelki w dół i uzupełnia nowe na górze
+  // Grawitacja – przesuwa kafelki w dół, a na górze uzupełnia nowe
   function applyGravity() {
     for (let col = 0; col < boardSize; col++) {
       let emptySpaces = 0;
@@ -380,19 +387,9 @@ document.addEventListener("DOMContentLoaded", function() {
           board[row][col] = null;
         }
       }
-      // Uzupełnij puste miejsca na górze
       for (let row = 0; row < emptySpaces; row++) {
         board[row][col] = randomEmoji();
       }
-    }
-  }
-
-  function processCascades() {
-    // Opcjonalnie: tutaj można sprawdzić, czy po opadnięciu powstały nowe sekwencje,
-    // i wywołać processMatches ponownie.
-    const newMatches = findMatches();
-    if (newMatches.length > 0) {
-      processMatches(newMatches);
     }
   }
 
@@ -422,7 +419,7 @@ document.addEventListener("DOMContentLoaded", function() {
     }
   }
 
-  // Wyłączenie interakcji na planszy – zamiast klonowania, ustawiamy pointerEvents = "none"
+  // Wyłączenie interakcji na planszy
   function disableBoard() {
     boardElement.style.pointerEvents = "none";
   }
@@ -452,7 +449,7 @@ document.addEventListener("DOMContentLoaded", function() {
       safeGoal[currentEmojis[i]] = getTargetForLevel(currentLevel) + i * 2;
       progress[currentEmojis[i]] = 0;
     }
-    // Przy następnym poziomie gracz zachowuje ruchy – nie resetujemy availableMoves
+    // Przy nowym poziomie przywracamy interakcję na planszy
     boardElement.style.pointerEvents = "auto";
     initBoard();
     renderBoard();
@@ -460,8 +457,13 @@ document.addEventListener("DOMContentLoaded", function() {
     updateMovesDisplay();
     saveGameState();
     messageElement.textContent = "";
-    // Opcjonalnie: sprawdzenie kaskady matchy
-    processCascades();
+    // Opcjonalnie: sprawdzenie kaskady – nowe match’e
+    setTimeout(() => {
+      const newMatches = findMatches();
+      if (newMatches.length > 0) {
+        processMatches(newMatches);
+      }
+    }, 100);
   }
 
   // ===============================
