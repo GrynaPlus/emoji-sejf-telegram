@@ -29,6 +29,35 @@ document.addEventListener("DOMContentLoaded", function() {
   }
 
   // ===============================
+  // DODATKOWA FUNKCJA: generowanie nowego emoji
+  // wybieramy spośród bieżącego zbioru, filtrując te, które mogłyby spowodować natychmiastowy match.
+  function generateNewTile(row, col) {
+    const currentEmojis = getCurrentEmojiTypes();
+    let candidates = currentEmojis.slice();
+    // Sprawdzenie lewej strony (jeśli są 2 kafelki z lewej)
+    if (col >= 2) {
+      const leftEmoji = board[row][col-1];
+      const leftEmoji2 = board[row][col-2];
+      if (leftEmoji && leftEmoji === leftEmoji2) {
+        candidates = candidates.filter(e => e !== leftEmoji);
+      }
+    }
+    // Sprawdzenie kafelków poniżej (jeśli są 2 kafelki poniżej – ponieważ nowe kafelki będą pojawiać się u góry)
+    if (row <= boardSize - 3) {
+      const belowEmoji = board[row+1][col];
+      const belowEmoji2 = board[row+2][col];
+      if (belowEmoji && belowEmoji === belowEmoji2) {
+        candidates = candidates.filter(e => e !== belowEmoji);
+      }
+    }
+    if (candidates.length === 0) {
+      return currentEmojis[Math.floor(Math.random() * currentEmojis.length)];
+    } else {
+      return candidates[Math.floor(Math.random() * candidates.length)];
+    }
+  }
+
+  // ===============================
   // ZMIENNE GLOBALNE
   // ===============================
   let currentLevel = 1;
@@ -89,6 +118,22 @@ document.addEventListener("DOMContentLoaded", function() {
   }
 
   // ===============================
+  // Funkcja pokazująca zachętę po matchu
+  // ===============================
+  function showEncouragement() {
+    const messages = ["Świetnie!", "Super!", "Tak trzymaj!", "Rewelacja!", "Brawo!"];
+    const msg = messages[Math.floor(Math.random() * messages.length)];
+    if (messageElement.textContent === "") {
+      messageElement.textContent = msg;
+      setTimeout(() => {
+        if (messageElement.textContent === msg) {
+          messageElement.textContent = "";
+        }
+      }, 500);
+    }
+  }
+
+  // ===============================
   // INICJALIZACJA GRY
   // ===============================
   function initGame() {
@@ -113,7 +158,9 @@ document.addEventListener("DOMContentLoaded", function() {
     updateUserDisplay();
   }
 
-  // Generowanie planszy – zapobiegamy trzem tym samym obok siebie
+  // ===============================
+  // GENEROWANIE PLANSZY
+  // ===============================
   function initBoard() {
     const currentEmojis = getCurrentEmojiTypes();
     board = [];
@@ -209,7 +256,9 @@ document.addEventListener("DOMContentLoaded", function() {
     return (Math.abs(r1 - r2) + Math.abs(c1 - c2)) === 1;
   }
 
-  // Animacja zamiany – klonujemy elementy, animujemy transformację
+  // ===============================
+  // ANIMACJA ZAMIANY (swap)
+  // ===============================
   function animateSwap(cell1, cell2, callback) {
     const boardRect = boardElement.getBoundingClientRect();
     const rect1 = cell1.getBoundingClientRect();
@@ -255,6 +304,7 @@ document.addEventListener("DOMContentLoaded", function() {
       renderBoard();
       const matches = findMatches();
       if (matches.length > 0) {
+        showEncouragement();
         processMatches(matches);
       } else {
         const newCell1 = document.querySelector(`.cell[data-row='${r1}'][data-col='${c1}']`);
@@ -326,7 +376,7 @@ document.addEventListener("DOMContentLoaded", function() {
     return uniqueMatches;
   }
 
-  // Animacja znikania – dodajemy klasę .disappear, następnie opadanie nowych kafelek
+  // Animacja znikania – dodajemy klasę .disappear, potem stosujemy grawitację i animację drop
   function processMatches(matches) {
     let matchedCoords = new Set();
     for (let match of matches) {
@@ -368,7 +418,7 @@ document.addEventListener("DOMContentLoaded", function() {
     }, 300);
   }
 
-  // Funkcja grawitacji – przesuwa kafelki w dół, uzupełnia nowe na górze
+  // Funkcja grawitacji – przesuwamy kafelki w dół i uzupełniamy nowe (przy użyciu generateNewTile)
   function applyGravity() {
     for (let col = 0; col < boardSize; col++) {
       let emptySpaces = 0;
@@ -381,7 +431,7 @@ document.addEventListener("DOMContentLoaded", function() {
         }
       }
       for (let row = 0; row < emptySpaces; row++) {
-        board[row][col] = randomEmoji();
+        board[row][col] = generateNewTile(row, col);
       }
     }
   }
@@ -416,6 +466,7 @@ document.addEventListener("DOMContentLoaded", function() {
     boardElement.style.pointerEvents = "none";
   }
 
+  // Animacja otwierania sejfu – po kilku sekundach przechodzimy do kolejnego poziomu
   function openSafeAnimation() {
     const safeContainer = document.getElementById("safe-container");
     const safeElement = document.getElementById("safe");
@@ -432,6 +483,7 @@ document.addEventListener("DOMContentLoaded", function() {
     }, 600);
   }
 
+  // W nowym poziomie – resetujemy cele, przywracamy safe (zamknięty) i przywracamy interakcję
   function nextLevel() {
     currentLevel++;
     const currentEmojis = getCurrentEmojiTypes();
@@ -441,6 +493,10 @@ document.addEventListener("DOMContentLoaded", function() {
       safeGoal[currentEmojis[i]] = getTargetForLevel(currentLevel) + i * 2;
       progress[currentEmojis[i]] = 0;
     }
+    const safeContainer = document.getElementById("safe-container");
+    safeContainer.classList.remove("show");
+    safeContainer.classList.add("hidden");
+    document.getElementById("safe").textContent = "🔒";
     boardElement.style.pointerEvents = "auto";
     initBoard();
     renderBoard();
