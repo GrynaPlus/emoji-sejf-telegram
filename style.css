@@ -112,7 +112,7 @@ header {
   color: #333;
 }
 
-#ad-message {
+#ad-message, #ad-obstacle {
   margin-top: 10px;
   padding: 10px;
   background: #ffeb3b;
@@ -120,7 +120,7 @@ header {
   font-size: 16px;
 }
 
-#ad-message p {
+#ad-message p, #ad-obstacle p {
   margin: 0 0 10px;
 }
 
