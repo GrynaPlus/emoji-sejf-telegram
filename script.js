@@ -11,8 +11,6 @@ document.addEventListener("DOMContentLoaded", function() {
     "🍏", "🥭", "🍐", "🍋", "🥥", "🍅", "🥑", "🍆", "🌽", "🥕",
     "🍔", "🍟", "🍕", "🌭", "🥪", "🍜", "🍣", "🍩", "🍪", "☕"
   ];
-
-  // Symbol przeszkody oraz bonus
   const OBSTACLE = "🧱";
   const BONUS = "⭐";
 
@@ -20,26 +18,25 @@ document.addEventListener("DOMContentLoaded", function() {
   function getTargetForLevel(level) {
     return Math.floor(3 + (level - 1) * (100 - 3) / (1000 - 1));
   }
-
+  
   // Liczba typów emoji używanych w poziomie – od 4 do 20
   function getNumEmojiTypesForLevel(level) {
     return Math.min(20, 4 + Math.floor((level - 1) * (20 - 4) / (1000 - 1)));
   }
-
+  
   // Zwraca bieżący zbiór emoji (podzbiór z pełnej listy)
   function getCurrentEmojiTypes() {
     const count = getNumEmojiTypesForLevel(currentLevel);
     return emojis.slice(0, count);
   }
-
+  
   // ===============================
   // DODATKOWA FUNKCJA: generowanie nowego kafelka
-  // Wybieramy spośród bieżącego zbioru, filtrując tych, którzy mogliby natychmiast utworzyć match.
-  // Dodatkowo, z pewną szansą zwracamy BONUS.
+  // Filtruje kandydatów, aby nowe kafelki nie tworzyły od razu matchu.
+  // Z pewną szansą zwraca BONUS.
   function generateNewTile(row, col) {
     const currentEmojis = getCurrentEmojiTypes();
     let candidates = currentEmojis.slice();
-    // Sprawdzenie lewej strony – jeśli 2 kafelki są takie same, filtrujemy je
     if (col >= 2) {
       const leftEmoji = board[row][col-1];
       const leftEmoji2 = board[row][col-2];
@@ -47,7 +44,6 @@ document.addEventListener("DOMContentLoaded", function() {
         candidates = candidates.filter(e => e !== leftEmoji);
       }
     }
-    // Sprawdzenie kafelków poniżej – jeśli dwa są takie same, filtrujemy
     if (row <= boardSize - 3) {
       const belowEmoji = board[row+1][col];
       const belowEmoji2 = board[row+2][col];
@@ -55,9 +51,8 @@ document.addEventListener("DOMContentLoaded", function() {
         candidates = candidates.filter(e => e !== belowEmoji);
       }
     }
-    // Szansa na bonus
-    const bonusProbability = 0.1;
-    if (Math.random() < bonusProbability) {
+    // Szansa na bonus: 10%
+    if (Math.random() < 0.1) {
       return BONUS;
     }
     if (candidates.length === 0) {
@@ -66,10 +61,10 @@ document.addEventListener("DOMContentLoaded", function() {
       return candidates[Math.floor(Math.random() * candidates.length)];
     }
   }
-
+  
   // ===============================
   // DODATKOWA FUNKCJA: dodawanie przeszkód
-  // Na poziomie 3 i wyżej losowo zamieniamy niektóre kafelki na przeszkody.
+  // Od poziomu 3 wzrasta szansa na pojawienie się przeszkody (OBSTACLE)
   function addObstacles() {
     if (currentLevel < 3) return;
     const p = Math.min(0.3, 0.1 + (currentLevel - 3) * 0.02);
@@ -81,18 +76,18 @@ document.addEventListener("DOMContentLoaded", function() {
       }
     }
   }
-
+  
   // ===============================
   // ZMIENNE GLOBALNE
   // ===============================
   let currentLevel = 1;
-  let safeGoal = {};   // Dla każdego emoji – cel = bazowy cel * (1 + 0.2 * indeks)
+  let safeGoal = {};   // Dla każdego emoji: cel = bazowy cel * (1 + 0.2 * indeks)
   let progress = {};   // Postęp zbierania
   let board = [];
   let selectedCell = null;
   let username = "";
   let availableMoves = 50;  // Na początku 50 ruchów
-
+  
   // ===============================
   // ELEMENTY DOM
   // ===============================
@@ -107,7 +102,7 @@ document.addEventListener("DOMContentLoaded", function() {
   const usernameInput = document.getElementById("username-input");
   const usernameSubmit = document.getElementById("username-submit");
   const gameContainer = document.getElementById("game-container");
-
+  
   // ===============================
   // ZAPIS/ODCZYT STANU GRY
   // ===============================
@@ -122,7 +117,7 @@ document.addEventListener("DOMContentLoaded", function() {
     };
     localStorage.setItem("gameState", JSON.stringify(state));
   }
-
+  
   function loadGameState() {
     const stateStr = localStorage.getItem("gameState");
     if (stateStr) {
@@ -141,7 +136,7 @@ document.addEventListener("DOMContentLoaded", function() {
     }
     return false;
   }
-
+  
   // ===============================
   // Funkcja zachęcająca – losowy komunikat po matchu
   // ===============================
@@ -157,7 +152,7 @@ document.addEventListener("DOMContentLoaded", function() {
       }, 500);
     }
   }
-
+  
   // ===============================
   // INICJALIZACJA GRY
   // ===============================
@@ -167,7 +162,6 @@ document.addEventListener("DOMContentLoaded", function() {
       const currentEmojis = getCurrentEmojiTypes();
       safeGoal = {};
       progress = {};
-      // Dla każdego emoji: cel = bazowy cel * (1 + 0.2 * indeks)
       for (let i = 0; i < currentEmojis.length; i++) {
         safeGoal[currentEmojis[i]] = Math.floor(getTargetForLevel(currentLevel) * (1 + i * 0.2));
         progress[currentEmojis[i]] = 0;
@@ -182,7 +176,7 @@ document.addEventListener("DOMContentLoaded", function() {
     updateMovesDisplay();
     updateUserDisplay();
   }
-
+  
   // ===============================
   // GENEROWANIE PLANSZY
   // ===============================
@@ -205,7 +199,7 @@ document.addEventListener("DOMContentLoaded", function() {
     }
     addObstacles();
   }
-
+  
   // ===============================
   // RENDEROWANIE I AKTUALIZACJE
   // ===============================
@@ -218,7 +212,6 @@ document.addEventListener("DOMContentLoaded", function() {
         cell.dataset.row = r;
         cell.dataset.col = c;
         cell.textContent = board[r][c];
-        // Jeśli kafelek jest przeszkodą, dodajemy klasę i nie przypisujemy event listenera
         if (board[r][c] === OBSTACLE) {
           cell.classList.add("obstacle");
         } else {
@@ -229,7 +222,7 @@ document.addEventListener("DOMContentLoaded", function() {
     }
     saveGameState();
   }
-
+  
   function updateGoalDisplay() {
     const currentEmojis = getCurrentEmojiTypes();
     let html = `<strong>Cel (Poziom ${currentLevel}):</strong> `;
@@ -240,15 +233,15 @@ document.addEventListener("DOMContentLoaded", function() {
     }
     goalElement.innerHTML = html;
   }
-
+  
   function updateMovesDisplay() {
     movesCounterElement.textContent = `Pozostałe ruchy: ${availableMoves}`;
   }
-
+  
   function updateUserDisplay() {
     userDisplay.textContent = `Witaj, ${username}!`;
   }
-
+  
   // ===============================
   // OBSŁUGA KLIKNIĘĆ I ANIMACJI
   // ===============================
@@ -270,7 +263,7 @@ document.addEventListener("DOMContentLoaded", function() {
         return;
       }
       if (isAdjacent(selectedCell.r, selectedCell.c, r, c)) {
-        // Sprawdzenie – nie można zamieniać z przeszkodą
+        // Nie pozwalamy na zamianę z przeszkodą
         if (board[selectedCell.r][selectedCell.c] === OBSTACLE || board[r][c] === OBSTACLE) {
           selectedCell.element.classList.remove("selected");
           selectedCell = null;
@@ -288,11 +281,11 @@ document.addEventListener("DOMContentLoaded", function() {
       }
     }
   }
-
+  
   function isAdjacent(r1, c1, r2, c2) {
     return (Math.abs(r1 - r2) + Math.abs(c1 - c2)) === 1;
   }
-
+  
   // ===============================
   // ANIMACJA ZAMIANY (swap)
   // ===============================
@@ -332,7 +325,7 @@ document.addEventListener("DOMContentLoaded", function() {
     clone1.addEventListener('transitionend', onTransitionEnd, { once: true });
     clone2.addEventListener('transitionend', onTransitionEnd, { once: true });
   }
-
+  
   function swapCells(r1, c1, r2, c2) {
     const cell1 = document.querySelector(`.cell[data-row='${r1}'][data-col='${c1}']`);
     const cell2 = document.querySelector(`.cell[data-row='${r2}'][data-col='${c2}']`);
@@ -353,7 +346,7 @@ document.addEventListener("DOMContentLoaded", function() {
       }
     });
   }
-
+  
   // ===============================
   // MATCH-3 LOGIKA – znikanie, grawitacja, opadanie, cascade
   // ===============================
@@ -401,7 +394,6 @@ document.addEventListener("DOMContentLoaded", function() {
         }
       }
     }
-    // Usunięcie duplikatów
     let uniqueMatches = [];
     let seen = {};
     for (let m of matches) {
@@ -413,7 +405,7 @@ document.addEventListener("DOMContentLoaded", function() {
     }
     return uniqueMatches;
   }
-
+  
   // Animacja znikania – dodajemy klasę .disappear, następnie stosujemy grawitację i animację drop
   function processMatches(matches) {
     let matchedCoords = new Set();
@@ -429,7 +421,7 @@ document.addEventListener("DOMContentLoaded", function() {
         }
       }
     }
-    // Dodatkowo – usuń przeszkody, które sąsiadują z trafionymi kafelkami
+    // Usuń także przeszkody, które sąsiadują z trafionymi kafelkami
     for (let r = 0; r < boardSize; r++) {
       for (let c = 0; c < boardSize; c++) {
         if (board[r][c] === OBSTACLE) {
@@ -473,7 +465,7 @@ document.addEventListener("DOMContentLoaded", function() {
       }, 500);
     }, 300);
   }
-
+  
   // Grawitacja – przesuwamy kafelki w dół, a puste miejsca uzupełniamy nowymi (przy użyciu generateNewTile)
   function applyGravity() {
     for (let col = 0; col < boardSize; col++) {
@@ -482,7 +474,6 @@ document.addEventListener("DOMContentLoaded", function() {
         if (board[row][col] == null) {
           emptySpaces++;
         } else if (board[row][col] === OBSTACLE) {
-          // Przeszkody nie opadają, ale resetujemy licznik pustych miejsc poniżej
           emptySpaces = 0;
         } else if (emptySpaces > 0) {
           board[row + emptySpaces][col] = board[row][col];
@@ -494,12 +485,12 @@ document.addEventListener("DOMContentLoaded", function() {
       }
     }
   }
-
+  
   function randomEmoji() {
     const currentEmojis = getCurrentEmojiTypes();
     return currentEmojis[Math.floor(Math.random() * currentEmojis.length)];
   }
-
+  
   // ===============================
   // WARUNEK ZWYCIĘSTWA I KOLEJNE POZIOMY
   // ===============================
@@ -520,12 +511,12 @@ document.addEventListener("DOMContentLoaded", function() {
       messageElement.textContent = "";
     }
   }
-
+  
   function disableBoard() {
     boardElement.style.pointerEvents = "none";
   }
-
-  // Animacja otwierania sejfu – zmiana ikony z 🔒 na 🔓, a następnie przejście do kolejnego poziomu
+  
+  // Animacja otwierania sejfu – zmiana ikony z 🔒 na 🔓, potem przejście do kolejnego poziomu
   function openSafeAnimation() {
     const safeContainer = document.getElementById("safe-container");
     const safeElement = document.getElementById("safe");
@@ -541,8 +532,8 @@ document.addEventListener("DOMContentLoaded", function() {
       }, 2000);
     }, 600);
   }
-
-  // W kolejnym poziomie – resetujemy cele (safeGoal i progress) oraz zamykamy sejf (ikona 🔒)
+  
+  // W kolejnym poziomie – resetujemy cele (safeGoal, progress) oraz zamykamy sejf (ikona 🔒)
   function nextLevel() {
     currentLevel++;
     const currentEmojis = getCurrentEmojiTypes();
@@ -570,21 +561,21 @@ document.addEventListener("DOMContentLoaded", function() {
       }
     }, 100);
   }
-
+  
   // ===============================
   // OBSŁUGA DODATKOWYCH RUCHÓW PRZEZ REKLAMĘ
   // ===============================
   function showAdMessage() {
     adMessageElement.classList.remove("hidden");
   }
-
+  
   adBtn.addEventListener("click", function() {
     availableMoves += 50;
     updateMovesDisplay();
     adMessageElement.classList.add("hidden");
     saveGameState();
   });
-
+  
   // ===============================
   // OBSŁUGA MODALA NA NAZWĘ UŻYTKOWNIKA
   // ===============================
@@ -603,7 +594,7 @@ document.addEventListener("DOMContentLoaded", function() {
       alert("Wpisz nazwę użytkownika!");
     }
   });
-
+  
   const savedName = localStorage.getItem("username");
   if (savedName) {
     username = savedName;
