@@ -1,4 +1,3 @@
-// Upewnij się, że cały kod uruchamia się po załadowaniu DOM
 document.addEventListener("DOMContentLoaded", function() {
   console.log("DOM fully loaded and parsed");
 
@@ -6,8 +5,6 @@ document.addEventListener("DOMContentLoaded", function() {
   // KONFIGURACJA GRY
   // ===============================
   const boardSize = 6;
-
-  // Pełna lista emoji – wykorzystamy je wszystkie
   const emojis = [
     "😀","😃","😄","😁","😆","😅","😂","🤣","😊","😇",
     "🙂","🙃","😉","😌","😍","🥰","😘","😗","😙","😚",
@@ -104,7 +101,6 @@ document.addEventListener("DOMContentLoaded", function() {
   // INICJALIZACJA GRY
   // ===============================
   function initGame() {
-    // Jeśli nie udało się wczytać stanu, rozpoczynamy nową grę:
     if (!loadGameState()) {
       currentLevel = 1;
       const currentEmojis = getCurrentEmojiTypes();
@@ -115,7 +111,7 @@ document.addEventListener("DOMContentLoaded", function() {
         progress[e] = 0;
       }
       initBoard();
-      // Obliczamy liczbę dostępnych ruchów (przyjmujemy, że średnio jeden ruch daje 3 trafienia)
+      // Obliczamy liczbę dostępnych ruchów (średnio jeden ruch daje 3 trafienia)
       availableMoves = Math.ceil((currentEmojis.length * safeGoal[currentEmojis[0]]) / 3);
     }
     renderBoard();
@@ -124,7 +120,7 @@ document.addEventListener("DOMContentLoaded", function() {
     updateUserDisplay();
   }
 
-  // Inicjalizacja planszy – generujemy planszę używając aktualnie dozwolonego zbioru emoji
+  // Inicjalizacja planszy – generowanie planszy z użyciem bieżącego zbioru emoji
   function initBoard() {
     const currentEmojis = getCurrentEmojiTypes();
     board = [];
@@ -132,9 +128,11 @@ document.addEventListener("DOMContentLoaded", function() {
       let row = [];
       for (let c = 0; c < boardSize; c++) {
         let possibleEmojis = [...currentEmojis];
+        // Nie trzy takie same obok siebie w wierszu
         if (c >= 2 && row[c - 1] === row[c - 2]) {
           possibleEmojis = possibleEmojis.filter(e => e !== row[c - 1]);
         }
+        // Nie trzy takie same jeden pod drugim
         if (r >= 2 && board[r - 1][c] === board[r - 2][c]) {
           possibleEmojis = possibleEmojis.filter(e => e !== board[r - 1][c]);
         }
@@ -167,11 +165,9 @@ document.addEventListener("DOMContentLoaded", function() {
     const currentEmojis = getCurrentEmojiTypes();
     let html = `<strong>Cel (Poziom ${currentLevel}):</strong> `;
     for (let e of currentEmojis) {
-      if (progress[e] >= safeGoal[e]) {
-        html += `${e}: ✅ &nbsp;&nbsp;`;
-      } else {
-        html += `${e}: ${progress[e]}/${safeGoal[e]} &nbsp;&nbsp;`;
-      }
+      html += progress[e] >= safeGoal[e]
+        ? `${e}: ✅ &nbsp;&nbsp;`
+        : `${e}: ${progress[e]}/${safeGoal[e]} &nbsp;&nbsp;`;
     }
     goalElement.innerHTML = html;
   }
@@ -192,11 +188,9 @@ document.addEventListener("DOMContentLoaded", function() {
       showAdMessage();
       return;
     }
-    
     const cellDiv = e.currentTarget;
     const r = parseInt(cellDiv.dataset.row);
     const c = parseInt(cellDiv.dataset.col);
-
     if (!selectedCell) {
       selectedCell = { r, c, element: cellDiv };
       cellDiv.classList.add("selected");
@@ -228,10 +222,8 @@ document.addEventListener("DOMContentLoaded", function() {
     const boardRect = boardElement.getBoundingClientRect();
     const rect1 = cell1.getBoundingClientRect();
     const rect2 = cell2.getBoundingClientRect();
-
     const offset1 = { x: rect1.left - boardRect.left, y: rect1.top - boardRect.top };
     const offset2 = { x: rect2.left - boardRect.left, y: rect2.top - boardRect.top };
-
     const clone1 = cell1.cloneNode(true);
     const clone2 = cell2.cloneNode(true);
     clone1.classList.add('animate');
@@ -240,18 +232,14 @@ document.addEventListener("DOMContentLoaded", function() {
     clone1.style.top = offset1.y + 'px';
     clone2.style.left = offset2.x + 'px';
     clone2.style.top = offset2.y + 'px';
-
     boardElement.appendChild(clone1);
     boardElement.appendChild(clone2);
-
     cell1.style.visibility = 'hidden';
     cell2.style.visibility = 'hidden';
-
     requestAnimationFrame(() => {
       clone1.style.transform = `translate(${offset2.x - offset1.x}px, ${offset2.y - offset1.y}px)`;
       clone2.style.transform = `translate(${offset1.x - offset2.x}px, ${offset1.y - offset2.y}px)`;
     });
-
     let finished = 0;
     function onTransitionEnd() {
       finished++;
@@ -270,11 +258,9 @@ document.addEventListener("DOMContentLoaded", function() {
   function swapCells(r1, c1, r2, c2) {
     const cell1 = document.querySelector(`.cell[data-row='${r1}'][data-col='${c1}']`);
     const cell2 = document.querySelector(`.cell[data-row='${r2}'][data-col='${c2}']`);
-
     animateSwap(cell1, cell2, () => {
       [board[r1][c1], board[r2][c2]] = [board[r2][c2], board[r1][c1]];
       renderBoard();
-
       const matches = findMatches();
       if (matches.length > 0) {
         processMatches(matches);
@@ -294,6 +280,7 @@ document.addEventListener("DOMContentLoaded", function() {
   // ===============================
   function findMatches() {
     let matches = [];
+    // Sprawdzenie rzędów
     for (let r = 0; r < boardSize; r++) {
       let count = 1;
       for (let c = 1; c < boardSize; c++) {
@@ -314,6 +301,7 @@ document.addEventListener("DOMContentLoaded", function() {
         }
       }
     }
+    // Sprawdzenie kolumn
     for (let c = 0; c < boardSize; c++) {
       let count = 1;
       for (let r = 1; r < boardSize; r++) {
@@ -334,6 +322,7 @@ document.addEventListener("DOMContentLoaded", function() {
         }
       }
     }
+    // Usunięcie duplikatów
     let uniqueMatches = [];
     let seen = {};
     for (let m of matches) {
@@ -476,10 +465,12 @@ document.addEventListener("DOMContentLoaded", function() {
     if (name) {
       username = name;
       localStorage.setItem("username", username);
-      // Jeśli użytkownik zaczyna nową grę, wyczyść zapisany stan gry:
+      // Usuwamy zapisany stan gry, aby zacząć nową rozgrywkę
       localStorage.removeItem("gameState");
-      usernameModal.classList.add("hidden");
-      gameContainer.classList.remove("hidden");
+      // Ukrywamy modal ustawiając display: none
+      usernameModal.style.display = 'none';
+      // Pokazujemy główny kontener gry ustawiając display: block
+      gameContainer.style.display = 'block';
       updateUserDisplay();
       initGame();
     } else {
@@ -487,12 +478,12 @@ document.addEventListener("DOMContentLoaded", function() {
     }
   });
 
-  // Jeśli użytkownik już podał nazwę, ładujemy ją i uruchamiamy grę
+  // Jeśli użytkownik już podał nazwę – ładujemy ją i uruchamiamy grę
   const savedName = localStorage.getItem("username");
   if (savedName) {
     username = savedName;
-    usernameModal.classList.add("hidden");
-    gameContainer.classList.remove("hidden");
+    usernameModal.style.display = 'none';
+    gameContainer.style.display = 'block';
     updateUserDisplay();
     initGame();
   }
