@@ -141,6 +141,12 @@ header {
   color: green;
 }
 
+/* Styl dla przeszkód – nieklikalne, ciemniejsze tło */
+.cell.obstacle {
+  background: #666;
+  cursor: default;
+}
+
 button {
   padding: 10px 20px;
   font-size: 16px;
