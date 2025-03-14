@@ -12,6 +12,10 @@ document.addEventListener("DOMContentLoaded", function() {
     "🍔", "🍟", "🍕", "🌭", "🥪", "🍜", "🍣", "🍩", "🍪", "☕"
   ];
 
+  // Symbol przeszkody oraz bonus
+  const OBSTACLE = "🧱";
+  const BONUS = "⭐";
+
   // Bazowy cel – rośnie liniowo (od 3 do 100 przy poziomie 1000)
   function getTargetForLevel(level) {
     return Math.floor(3 + (level - 1) * (100 - 3) / (1000 - 1));
@@ -29,12 +33,13 @@ document.addEventListener("DOMContentLoaded", function() {
   }
 
   // ===============================
-  // DODATKOWA FUNKCJA: generowanie nowego emoji
-  // Takie, aby nowe kafelki nie tworzyły od razu matchu.
+  // DODATKOWA FUNKCJA: generowanie nowego kafelka
+  // Wybieramy spośród bieżącego zbioru, filtrując tych, którzy mogliby natychmiast utworzyć match.
+  // Dodatkowo, z pewną szansą zwracamy BONUS.
   function generateNewTile(row, col) {
     const currentEmojis = getCurrentEmojiTypes();
     let candidates = currentEmojis.slice();
-    // Sprawdzamy lewą stronę – jeśli dwa sąsiadujące po lewej mają ten sam symbol, filtrujemy go
+    // Sprawdzenie lewej strony – jeśli 2 kafelki są takie same, filtrujemy je
     if (col >= 2) {
       const leftEmoji = board[row][col-1];
       const leftEmoji2 = board[row][col-2];
@@ -42,13 +47,18 @@ document.addEventListener("DOMContentLoaded", function() {
         candidates = candidates.filter(e => e !== leftEmoji);
       }
     }
-    // Sprawdzamy poniżej – jeśli dwa kafelki poniżej są takie same, filtrujemy je
+    // Sprawdzenie kafelków poniżej – jeśli dwa są takie same, filtrujemy
     if (row <= boardSize - 3) {
       const belowEmoji = board[row+1][col];
       const belowEmoji2 = board[row+2][col];
       if (belowEmoji && belowEmoji === belowEmoji2) {
         candidates = candidates.filter(e => e !== belowEmoji);
       }
+    }
+    // Szansa na bonus
+    const bonusProbability = 0.1;
+    if (Math.random() < bonusProbability) {
+      return BONUS;
     }
     if (candidates.length === 0) {
       return currentEmojis[Math.floor(Math.random() * currentEmojis.length)];
@@ -58,15 +68,30 @@ document.addEventListener("DOMContentLoaded", function() {
   }
 
   // ===============================
+  // DODATKOWA FUNKCJA: dodawanie przeszkód
+  // Na poziomie 3 i wyżej losowo zamieniamy niektóre kafelki na przeszkody.
+  function addObstacles() {
+    if (currentLevel < 3) return;
+    const p = Math.min(0.3, 0.1 + (currentLevel - 3) * 0.02);
+    for (let r = 0; r < boardSize; r++) {
+      for (let c = 0; c < boardSize; c++) {
+        if (board[r][c] !== OBSTACLE && Math.random() < p) {
+          board[r][c] = OBSTACLE;
+        }
+      }
+    }
+  }
+
+  // ===============================
   // ZMIENNE GLOBALNE
   // ===============================
   let currentLevel = 1;
-  let safeGoal = {};   // Dla każdego emoji inny cel (bazowy cel * (1 + 0.2 * indeks))
+  let safeGoal = {};   // Dla każdego emoji – cel = bazowy cel * (1 + 0.2 * indeks)
   let progress = {};   // Postęp zbierania
   let board = [];
   let selectedCell = null;
   let username = "";
-  let availableMoves = 50;  // Na początku gracz ma 50 ruchów
+  let availableMoves = 50;  // Na początku 50 ruchów
 
   // ===============================
   // ELEMENTY DOM
@@ -118,7 +143,7 @@ document.addEventListener("DOMContentLoaded", function() {
   }
 
   // ===============================
-  // Funkcja zachęcająca – wyświetla komunikat po matchu
+  // Funkcja zachęcająca – losowy komunikat po matchu
   // ===============================
   function showEncouragement() {
     const messages = ["Świetnie!", "Super!", "Tak trzymaj!", "Rewelacja!", "Brawo!"];
@@ -178,6 +203,7 @@ document.addEventListener("DOMContentLoaded", function() {
       }
       board.push(row);
     }
+    addObstacles();
   }
 
   // ===============================
@@ -192,7 +218,12 @@ document.addEventListener("DOMContentLoaded", function() {
         cell.dataset.row = r;
         cell.dataset.col = c;
         cell.textContent = board[r][c];
-        cell.addEventListener("click", onCellClick);
+        // Jeśli kafelek jest przeszkodą, dodajemy klasę i nie przypisujemy event listenera
+        if (board[r][c] === OBSTACLE) {
+          cell.classList.add("obstacle");
+        } else {
+          cell.addEventListener("click", onCellClick);
+        }
         boardElement.appendChild(cell);
       }
     }
@@ -239,6 +270,12 @@ document.addEventListener("DOMContentLoaded", function() {
         return;
       }
       if (isAdjacent(selectedCell.r, selectedCell.c, r, c)) {
+        // Sprawdzenie – nie można zamieniać z przeszkodą
+        if (board[selectedCell.r][selectedCell.c] === OBSTACLE || board[r][c] === OBSTACLE) {
+          selectedCell.element.classList.remove("selected");
+          selectedCell = null;
+          return;
+        }
         availableMoves--;
         updateMovesDisplay();
         swapCells(selectedCell.r, selectedCell.c, r, c);
@@ -326,7 +363,7 @@ document.addEventListener("DOMContentLoaded", function() {
     for (let r = 0; r < boardSize; r++) {
       let count = 1;
       for (let c = 1; c < boardSize; c++) {
-        if (board[r][c] === board[r][c - 1]) {
+        if (board[r][c] === board[r][c - 1] && board[r][c] !== OBSTACLE) {
           count++;
         } else {
           if (count >= 3) {
@@ -347,7 +384,7 @@ document.addEventListener("DOMContentLoaded", function() {
     for (let c = 0; c < boardSize; c++) {
       let count = 1;
       for (let r = 1; r < boardSize; r++) {
-        if (board[r][c] === board[r - 1][c]) {
+        if (board[r][c] === board[r - 1][c] && board[r][c] !== OBSTACLE) {
           count++;
         } else {
           if (count >= 3) {
@@ -364,6 +401,7 @@ document.addEventListener("DOMContentLoaded", function() {
         }
       }
     }
+    // Usunięcie duplikatów
     let uniqueMatches = [];
     let seen = {};
     for (let m of matches) {
@@ -381,9 +419,27 @@ document.addEventListener("DOMContentLoaded", function() {
     let matchedCoords = new Set();
     for (let match of matches) {
       matchedCoords.add(`${match.r},${match.c}`);
-      let e = board[match.r][match.c];
-      if (progress.hasOwnProperty(e)) {
-        progress[e]++;
+      let tile = board[match.r][match.c];
+      if (tile === BONUS) {
+        availableMoves += 20;
+        updateMovesDisplay();
+      } else if (tile !== OBSTACLE) {
+        if (progress.hasOwnProperty(tile)) {
+          progress[tile]++;
+        }
+      }
+    }
+    // Dodatkowo – usuń przeszkody, które sąsiadują z trafionymi kafelkami
+    for (let r = 0; r < boardSize; r++) {
+      for (let c = 0; c < boardSize; c++) {
+        if (board[r][c] === OBSTACLE) {
+          if ((r > 0 && matchedCoords.has(`${r-1},${c}`)) ||
+              (r < boardSize - 1 && matchedCoords.has(`${r+1},${c}`)) ||
+              (c > 0 && matchedCoords.has(`${r},${c-1}`)) ||
+              (c < boardSize - 1 && matchedCoords.has(`${r},${c+1}`))) {
+            matchedCoords.add(`${r},${c}`);
+          }
+        }
       }
     }
     document.querySelectorAll('.cell').forEach(cell => {
@@ -418,13 +474,16 @@ document.addEventListener("DOMContentLoaded", function() {
     }, 300);
   }
 
-  // Grawitacja – przesuwamy kafelki w dół i uzupełniamy nowe (używając generateNewTile)
+  // Grawitacja – przesuwamy kafelki w dół, a puste miejsca uzupełniamy nowymi (przy użyciu generateNewTile)
   function applyGravity() {
     for (let col = 0; col < boardSize; col++) {
       let emptySpaces = 0;
       for (let row = boardSize - 1; row >= 0; row--) {
         if (board[row][col] == null) {
           emptySpaces++;
+        } else if (board[row][col] === OBSTACLE) {
+          // Przeszkody nie opadają, ale resetujemy licznik pustych miejsc poniżej
+          emptySpaces = 0;
         } else if (emptySpaces > 0) {
           board[row + emptySpaces][col] = board[row][col];
           board[row][col] = null;
@@ -466,7 +525,7 @@ document.addEventListener("DOMContentLoaded", function() {
     boardElement.style.pointerEvents = "none";
   }
 
-  // Animacja otwierania sejfu – po pewnym czasie przechodzimy do kolejnego poziomu
+  // Animacja otwierania sejfu – zmiana ikony z 🔒 na 🔓, a następnie przejście do kolejnego poziomu
   function openSafeAnimation() {
     const safeContainer = document.getElementById("safe-container");
     const safeElement = document.getElementById("safe");
@@ -483,7 +542,7 @@ document.addEventListener("DOMContentLoaded", function() {
     }, 600);
   }
 
-  // W kolejnym poziomie – resetujemy cele, przywracamy sejf (zamknięty) i interakcję
+  // W kolejnym poziomie – resetujemy cele (safeGoal i progress) oraz zamykamy sejf (ikona 🔒)
   function nextLevel() {
     currentLevel++;
     const currentEmojis = getCurrentEmojiTypes();
