@@ -5,16 +5,10 @@ document.addEventListener("DOMContentLoaded", function() {
   // KONFIGURACJA GRY
   // ===============================
   const boardSize = 6;
+  // Nowa lista emoji – wyłącznie owoce i warzywa, które są dobrze rozróżnialne
   const emojis = [
-    "😀","😃","😄","😁","😆","😅","😂","🤣","😊","😇",
-    "🙂","🙃","😉","😌","😍","🥰","😘","😗","😙","😚",
-    "😋","😛","😝","😜","🤪","🤨","🧐","🤓","😎","🤩",
-    "🥳","😏","😒","😞","😔","😟","😕","🙁","☹️","😣",
-    "😖","😫","😩","🥺","😢","😭","😤","😠","😡","🤬",
-    "🤯","😳","🥵","🥶","😱","😨","😰","😥","😓","🤗",
-    "🤔","🤭","🤫","🤥","😶","😐","😑","😬","🙄","😯",
-    "😦","😧","😮","😲","🥱","😴","🤤","😪","😵","🤐",
-    "🥴","🤢","🤮","🤧","😷","🤒","🤕"
+    "🍌", "🍎", "🍓", "🍇", "🍒", "🍊", "🍍", "🥝", "🍑", "🍉",
+    "🍏", "🥭", "🍐", "🍋", "🥥", "🍅", "🥑", "🍆", "🌽", "🥕"
   ];
 
   // Funkcja obliczająca cel dla danego poziomu:
@@ -55,7 +49,6 @@ document.addEventListener("DOMContentLoaded", function() {
   const adMessageElement = document.getElementById("ad-message");
   const adBtn = document.getElementById("ad-btn");
   const messageElement = document.getElementById("message");
-  const restartBtn = document.getElementById("restart-btn");
   const userDisplay = document.getElementById("user-display");
 
   const usernameModal = document.getElementById("username-modal");
@@ -128,11 +121,9 @@ document.addEventListener("DOMContentLoaded", function() {
       let row = [];
       for (let c = 0; c < boardSize; c++) {
         let possibleEmojis = [...currentEmojis];
-        // Nie trzy takie same obok siebie w wierszu
         if (c >= 2 && row[c - 1] === row[c - 2]) {
           possibleEmojis = possibleEmojis.filter(e => e !== row[c - 1]);
         }
-        // Nie trzy takie same jeden pod drugim
         if (r >= 2 && board[r - 1][c] === board[r - 2][c]) {
           possibleEmojis = possibleEmojis.filter(e => e !== board[r - 1][c]);
         }
@@ -280,7 +271,6 @@ document.addEventListener("DOMContentLoaded", function() {
   // ===============================
   function findMatches() {
     let matches = [];
-    // Sprawdzenie rzędów
     for (let r = 0; r < boardSize; r++) {
       let count = 1;
       for (let c = 1; c < boardSize; c++) {
@@ -301,7 +291,6 @@ document.addEventListener("DOMContentLoaded", function() {
         }
       }
     }
-    // Sprawdzenie kolumn
     for (let c = 0; c < boardSize; c++) {
       let count = 1;
       for (let r = 1; r < boardSize; r++) {
@@ -322,7 +311,6 @@ document.addEventListener("DOMContentLoaded", function() {
         }
       }
     }
-    // Usunięcie duplikatów
     let uniqueMatches = [];
     let seen = {};
     for (let m of matches) {
@@ -433,30 +421,6 @@ document.addEventListener("DOMContentLoaded", function() {
   });
 
   // ===============================
-  // OBSŁUGA PRZYCISKU RESTART
-  // ===============================
-  restartBtn.addEventListener("click", function() {
-    currentLevel = 1;
-    const currentEmojis = getCurrentEmojiTypes();
-    safeGoal = {};
-    progress = {};
-    for (let e of currentEmojis) {
-      safeGoal[e] = getTargetForLevel(currentLevel);
-      progress[e] = 0;
-    }
-    messageElement.textContent = "";
-    const safeContainer = document.getElementById("safe-container");
-    safeContainer.classList.remove("show");
-    safeContainer.classList.add("hidden");
-    initBoard();
-    renderBoard();
-    updateGoalDisplay();
-    availableMoves = Math.ceil((currentEmojis.length * safeGoal[currentEmojis[0]]) / 3);
-    updateMovesDisplay();
-    saveGameState();
-  });
-
-  // ===============================
   // OBSŁUGA MODALA NA NAZWĘ UŻYTKOWNIKA
   // ===============================
   usernameSubmit.addEventListener("click", function() {
@@ -467,9 +431,7 @@ document.addEventListener("DOMContentLoaded", function() {
       localStorage.setItem("username", username);
       // Usuwamy zapisany stan gry, aby zacząć nową rozgrywkę
       localStorage.removeItem("gameState");
-      // Ukrywamy modal ustawiając display: none
       usernameModal.style.display = 'none';
-      // Pokazujemy główny kontener gry ustawiając display: block
       gameContainer.style.display = 'block';
       updateUserDisplay();
       initGame();
