@@ -104,6 +104,7 @@ document.addEventListener("DOMContentLoaded", function() {
   // INICJALIZACJA GRY
   // ===============================
   function initGame() {
+    // Jeśli nie udało się wczytać stanu, rozpoczynamy nową grę:
     if (!loadGameState()) {
       currentLevel = 1;
       const currentEmojis = getCurrentEmojiTypes();
@@ -475,6 +476,8 @@ document.addEventListener("DOMContentLoaded", function() {
     if (name) {
       username = name;
       localStorage.setItem("username", username);
+      // Jeśli użytkownik zaczyna nową grę, wyczyść zapisany stan gry:
+      localStorage.removeItem("gameState");
       usernameModal.classList.add("hidden");
       gameContainer.classList.remove("hidden");
       updateUserDisplay();
