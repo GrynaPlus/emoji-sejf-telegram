@@ -5,14 +5,14 @@ document.addEventListener("DOMContentLoaded", function() {
   // KONFIGURACJA GRY
   // ===============================
   const boardSize = 6;
-  // Nowa lista emoji – wyłącznie owoce i warzywa, które są dobrze rozróżnialne
+  // Rozszerzona baza emoji – owoce, warzywa i kilka innych pozytywnych symboli
   const emojis = [
     "🍌", "🍎", "🍓", "🍇", "🍒", "🍊", "🍍", "🥝", "🍑", "🍉",
-    "🍏", "🥭", "🍐", "🍋", "🥥", "🍅", "🥑", "🍆", "🌽", "🥕"
+    "🍏", "🥭", "🍐", "🍋", "🥥", "🍅", "🥑", "🍆", "🌽", "🥕",
+    "🍔", "🍟", "🍕", "🌭", "🥪", "🍜", "🍣", "🍩", "🍪", "☕"
   ];
 
-  // Funkcja obliczająca cel dla danego poziomu:
-  // Na poziomie 1: cel = 3, na poziomie 1000: cel = 100 (liniowo)
+  // Funkcja obliczająca bazowy cel dla danego poziomu (liniowo od 3 do 100 na poziomie 1000)
   function getTargetForLevel(level) {
     return Math.floor(3 + (level - 1) * (100 - 3) / (1000 - 1));
   }
@@ -23,7 +23,7 @@ document.addEventListener("DOMContentLoaded", function() {
     return Math.min(20, 4 + Math.floor((level - 1) * (20 - 4) / (1000 - 1)));
   }
 
-  // Zwraca aktualnie używane typy emoji (podzbiór pełnej listy)
+  // Zwraca aktualnie używane typy emoji (podzbiór z pełnej listy)
   function getCurrentEmojiTypes() {
     const count = getNumEmojiTypesForLevel(currentLevel);
     return emojis.slice(0, count);
@@ -33,12 +33,12 @@ document.addEventListener("DOMContentLoaded", function() {
   // ZMIENNE GLOBALNE
   // ===============================
   let currentLevel = 1;
-  let safeGoal = {};   // cel dla każdego emoji w bieżącym poziomie
+  let safeGoal = {};   // cel dla każdego emoji (różne dla każdego typu)
   let progress = {};   // postęp zbierania dla każdego emoji
   let board = [];
   let selectedCell = null;
   let username = "";
-  let availableMoves = 0;  // liczba ruchów dostępnych na poziomie
+  let availableMoves = 50;  // na początku przyznajemy 50 ruchów
 
   // ===============================
   // ELEMENTY DOM
@@ -99,13 +99,13 @@ document.addEventListener("DOMContentLoaded", function() {
       const currentEmojis = getCurrentEmojiTypes();
       safeGoal = {};
       progress = {};
-      for (let e of currentEmojis) {
-        safeGoal[e] = getTargetForLevel(currentLevel);
-        progress[e] = 0;
+      // Dla każdego emoji przypisujemy cel – każdy inny, np. baza + i*2
+      for (let i = 0; i < currentEmojis.length; i++) {
+        safeGoal[currentEmojis[i]] = getTargetForLevel(currentLevel) + i * 2;
+        progress[currentEmojis[i]] = 0;
       }
       initBoard();
-      // Obliczamy liczbę dostępnych ruchów (średnio jeden ruch daje 3 trafienia)
-      availableMoves = Math.ceil((currentEmojis.length * safeGoal[currentEmojis[0]]) / 3);
+      availableMoves = 50; // ustawiamy 50 ruchów na starcie
     }
     renderBoard();
     updateGoalDisplay();
@@ -113,7 +113,7 @@ document.addEventListener("DOMContentLoaded", function() {
     updateUserDisplay();
   }
 
-  // Inicjalizacja planszy – generowanie planszy z użyciem bieżącego zbioru emoji
+  // Inicjalizacja planszy – generujemy planszę z użyciem bieżącego zbioru emoji
   function initBoard() {
     const currentEmojis = getCurrentEmojiTypes();
     board = [];
@@ -121,6 +121,7 @@ document.addEventListener("DOMContentLoaded", function() {
       let row = [];
       for (let c = 0; c < boardSize; c++) {
         let possibleEmojis = [...currentEmojis];
+        // Zapobiegamy pojawianiu się trzech takich samych emoji obok siebie
         if (c >= 2 && row[c - 1] === row[c - 2]) {
           possibleEmojis = possibleEmojis.filter(e => e !== row[c - 1]);
         }
@@ -192,7 +193,7 @@ document.addEventListener("DOMContentLoaded", function() {
         return;
       }
       if (isAdjacent(selectedCell.r, selectedCell.c, r, c)) {
-        availableMoves--;
+        availableMoves--;  // odejmujemy jeden ruch tylko wtedy, gdy swap jest wykonywany
         updateMovesDisplay();
         swapCells(selectedCell.r, selectedCell.c, r, c);
         selectedCell.element.classList.remove("selected");
@@ -250,12 +251,14 @@ document.addEventListener("DOMContentLoaded", function() {
     const cell1 = document.querySelector(`.cell[data-row='${r1}'][data-col='${c1}']`);
     const cell2 = document.querySelector(`.cell[data-row='${r2}'][data-col='${c2}']`);
     animateSwap(cell1, cell2, () => {
+      // Zamieniamy wartości w planszy
       [board[r1][c1], board[r2][c2]] = [board[r2][c2], board[r1][c1]];
       renderBoard();
       const matches = findMatches();
       if (matches.length > 0) {
         processMatches(matches);
       } else {
+        // Jeżeli ruch nie utworzył sekwencji – cofamy zamianę (ruch został już odjęty)
         const newCell1 = document.querySelector(`.cell[data-row='${r1}'][data-col='${c1}']`);
         const newCell2 = document.querySelector(`.cell[data-row='${r2}'][data-col='${c2}']`);
         animateSwap(newCell1, newCell2, () => {
@@ -271,6 +274,7 @@ document.addEventListener("DOMContentLoaded", function() {
   // ===============================
   function findMatches() {
     let matches = [];
+    // Sprawdzamy rzedy
     for (let r = 0; r < boardSize; r++) {
       let count = 1;
       for (let c = 1; c < boardSize; c++) {
@@ -291,6 +295,7 @@ document.addEventListener("DOMContentLoaded", function() {
         }
       }
     }
+    // Sprawdzamy kolumny
     for (let c = 0; c < boardSize; c++) {
       let count = 1;
       for (let r = 1; r < boardSize; r++) {
@@ -311,6 +316,7 @@ document.addEventListener("DOMContentLoaded", function() {
         }
       }
     }
+    // Usuwamy duplikaty
     let uniqueMatches = [];
     let seen = {};
     for (let m of matches) {
@@ -389,11 +395,12 @@ document.addEventListener("DOMContentLoaded", function() {
     const currentEmojis = getCurrentEmojiTypes();
     safeGoal = {};
     progress = {};
-    for (let e of currentEmojis) {
-      safeGoal[e] = getTargetForLevel(currentLevel);
-      progress[e] = 0;
+    // Każdemu emoji przypisujemy inny cel – bazowy cel + (indeks * 2)
+    for (let i = 0; i < currentEmojis.length; i++) {
+      safeGoal[currentEmojis[i]] = getTargetForLevel(currentLevel) + i * 2;
+      progress[currentEmojis[i]] = 0;
     }
-    availableMoves = Math.ceil((currentEmojis.length * safeGoal[currentEmojis[0]]) / 3);
+    // UWAGA: nie resetujemy availableMoves – gracz zachowuje swoje ruchy
     const safeContainer = document.getElementById("safe-container");
     safeContainer.classList.remove("show");
     safeContainer.classList.add("hidden");
@@ -414,7 +421,7 @@ document.addEventListener("DOMContentLoaded", function() {
   }
 
   adBtn.addEventListener("click", function() {
-    availableMoves += 10;
+    availableMoves += 50;
     updateMovesDisplay();
     adMessageElement.classList.add("hidden");
     saveGameState();
