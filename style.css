@@ -40,7 +40,7 @@ header {
 
 #board {
   display: grid;
-  grid-template-columns: repeat(6, 50px);
+  grid-template-columns: repeat(5, 50px);
   grid-gap: 5px;
   margin: 20px auto;
   width: max-content;
