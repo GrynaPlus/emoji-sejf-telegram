@@ -450,16 +450,13 @@ document.addEventListener("DOMContentLoaded", function() {
   }
   
   // ===============================
-  // ZMIENIONA FUNKCJA GRAWITACJI
+  // NOWA FUNKCJA GRAWITACJI
   // ===============================
-  // Nowa wersja – iteracyjnie przesuwa emoji w dół, a następnie wypełnia puste pola,
-  // niezależnie od obecności blokad. Blokady (OBSTACLE) pozostają na swoich miejscach.
   function applyGravity() {
     let moved;
     do {
       moved = false;
       for (let col = 0; col < boardSize; col++) {
-        // Przetwarzamy od dołu, pomijając pierwszy wiersz
         for (let row = boardSize - 1; row > 0; row--) {
           if (board[row][col] === null &&
               board[row - 1][col] !== null &&
@@ -472,7 +469,6 @@ document.addEventListener("DOMContentLoaded", function() {
       }
     } while (moved);
     
-    // Wypełniamy wszystkie puste pola (niezależnie od ich położenia)
     for (let col = 0; col < boardSize; col++) {
       for (let row = 0; row < boardSize; row++) {
         if (board[row][col] === null) {
@@ -512,6 +508,9 @@ document.addEventListener("DOMContentLoaded", function() {
     boardElement.style.pointerEvents = "none";
   }
   
+  // ===============================
+  // OTWIERANIE SEJFU I PRZEJŚCIE DO KOLEJNEGO POZIOMU
+  // ===============================
   function openSafeAnimation() {
     const safeContainer = document.getElementById("safe-container");
     const safeElement = document.getElementById("safe");
@@ -523,7 +522,23 @@ document.addEventListener("DOMContentLoaded", function() {
       safeElement.textContent = "🔓";
       messageElement.textContent = "Poziom ukończony! Przechodzisz do kolejnego...";
       setTimeout(() => {
-        nextLevel();
+        // Jeśli ukończony poziom (currentLevel) jest podzielny przez 5, wyświetlamy reklamę In-App Interstitial
+        if (currentLevel % 5 === 0) {
+          show_9087151({
+            type: 'inApp',
+            inAppSettings: { 
+              frequency: 1, 
+              capping: 0, 
+              interval: 0, 
+              timeout: 1, 
+              everyPage: false 
+            }
+          }).then(() => {
+            nextLevel();
+          });
+        } else {
+          nextLevel();
+        }
       }, 2000);
     }, 600);
   }
@@ -561,9 +576,8 @@ document.addEventListener("DOMContentLoaded", function() {
   }
   
   // ===============================
-  // OBSŁUGA REKLAM
+  // OBSŁUGA REKLAM DLA DODATKOWYCH RUCHÓW
   // ===============================
-  // Dodana integracja funkcji reklamy nagradzanej (show_9087151)
   adBtn.addEventListener("click", function() {
     show_9087151().then(() => {
       availableMoves += 50;
@@ -574,6 +588,9 @@ document.addEventListener("DOMContentLoaded", function() {
     });
   });
   
+  // ===============================
+  // OBSŁUGA REKLAMY DO USUWANIA PRZESZKÓD
+  // ===============================
   adObstacleBtn.addEventListener("click", function() {
     show_9087151().then(() => {
       removeObstacles();
