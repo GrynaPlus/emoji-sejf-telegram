@@ -527,9 +527,9 @@ document.addEventListener("DOMContentLoaded", function() {
           show_9087151({
             type: 'inApp',
             inAppSettings: { 
-              frequency: 1, 
-              capping: 0, 
-              interval: 0, 
+              frequency: 2, 
+              capping: 0.1, 
+              interval: 30, 
               timeout: 1, 
               everyPage: false 
             }
