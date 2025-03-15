@@ -1,50 +1,9 @@
 document.addEventListener("DOMContentLoaded", function() {
   console.log("DOM fully loaded and parsed");
 
-  // Funkcja wyświetlająca reklamę jako overlay.
-  // Zamiast alertu tworzy modal z treścią reklamy oraz przyciskiem "Zamknij reklamę".
-  function show_9087151(options = {}) {
-    return new Promise((resolve) => {
-      // Utworzenie elementu nakładki (overlay)
-      let adOverlay = document.createElement('div');
-      adOverlay.id = 'ad-overlay';
-      adOverlay.style.position = 'fixed';
-      adOverlay.style.top = '0';
-      adOverlay.style.left = '0';
-      adOverlay.style.width = '100%';
-      adOverlay.style.height = '100%';
-      adOverlay.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
-      adOverlay.style.display = 'flex';
-      adOverlay.style.justifyContent = 'center';
-      adOverlay.style.alignItems = 'center';
-      adOverlay.style.zIndex = '1000';
-
-      // Utworzenie kontenera z treścią reklamy
-      let adContent = document.createElement('div');
-      adContent.style.background = '#fff';
-      adContent.style.padding = '20px';
-      adContent.style.borderRadius = '8px';
-      adContent.style.textAlign = 'center';
-      if (options.type === 'inApp') {
-        adContent.innerHTML = "<h2>Reklama In-App Interstitial</h2>";
-      } else {
-        adContent.innerHTML = "<h2>Reklama</h2>";
-      }
-
-      // Dodanie przycisku do zamknięcia reklamy
-      let closeButton = document.createElement('button');
-      closeButton.textContent = "Zamknij reklamę";
-      closeButton.style.marginTop = '10px';
-      closeButton.addEventListener('click', function() {
-        document.body.removeChild(adOverlay);
-        resolve();
-      });
-      adContent.appendChild(closeButton);
-
-      adOverlay.appendChild(adContent);
-      document.body.appendChild(adOverlay);
-    });
-  }
+  // UWAGA:
+  // Funkcja show_9087151() musi być załadowana z Monetag SDK.
+  // Nie definiujemy jej tutaj – korzystamy z kodu dostarczonego przez Monetag.
 
   // ===============================
   // KONFIGURACJA GRY
@@ -567,6 +526,7 @@ document.addEventListener("DOMContentLoaded", function() {
       safeElement.textContent = "🔓";
       messageElement.textContent = "Poziom ukończony! Przechodzisz do kolejnego...";
       setTimeout(() => {
+        // Jeśli poziom jest podzielny przez 5 – wyświetlamy reklamę In-App Interstitial
         if (currentLevel % 5 === 0) {
           show_9087151({
             type: 'inApp',
