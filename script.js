@@ -1,23 +1,48 @@
 document.addEventListener("DOMContentLoaded", function() {
   console.log("DOM fully loaded and parsed");
 
-  // Funkcja symulująca wyświetlanie reklamy.
-  // W środowisku produkcyjnym należy podmienić implementację na integrację z właściwym ad network.
+  // Funkcja wyświetlająca reklamę jako overlay.
+  // Zamiast alertu tworzy modal z treścią reklamy oraz przyciskiem "Zamknij reklamę".
   function show_9087151(options = {}) {
     return new Promise((resolve) => {
+      // Utworzenie elementu nakładki (overlay)
+      let adOverlay = document.createElement('div');
+      adOverlay.id = 'ad-overlay';
+      adOverlay.style.position = 'fixed';
+      adOverlay.style.top = '0';
+      adOverlay.style.left = '0';
+      adOverlay.style.width = '100%';
+      adOverlay.style.height = '100%';
+      adOverlay.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
+      adOverlay.style.display = 'flex';
+      adOverlay.style.justifyContent = 'center';
+      adOverlay.style.alignItems = 'center';
+      adOverlay.style.zIndex = '1000';
+
+      // Utworzenie kontenera z treścią reklamy
+      let adContent = document.createElement('div');
+      adContent.style.background = '#fff';
+      adContent.style.padding = '20px';
+      adContent.style.borderRadius = '8px';
+      adContent.style.textAlign = 'center';
       if (options.type === 'inApp') {
-        // Reklama In-App Interstitial zgodnie z ustawieniami:
-        // - 2 reklamy w ciągu 0.1 godziny (6 minut)
-        // - 30 sekund przerwy między reklamami
-        // - 5-sekundowe opóźnienie przed pierwszą reklamą
-        // - everyPage: false (sesja nie resetuje się przy przejściu między stronami)
-        alert("Wyświetlana reklama In-App Interstitial");
+        adContent.innerHTML = "<h2>Reklama In-App Interstitial</h2><p>Wyświetlana reklama In-App Interstitial</p>";
       } else {
-        alert("Wyświetlana reklama");
+        adContent.innerHTML = "<h2>Reklama</h2><p>Wyświetlana reklama</p>";
       }
-      // Symulacja czasu trwania reklamy (np. 1 sekunda dla zwykłej reklamy lub zgodnie z timeout dla inApp)
-      const delay = options.inAppSettings && options.inAppSettings.timeout ? options.inAppSettings.timeout * 1000 : 1000;
-      setTimeout(() => resolve(), delay);
+
+      // Dodanie przycisku do zamknięcia reklamy
+      let closeButton = document.createElement('button');
+      closeButton.textContent = "Zamknij reklamę";
+      closeButton.style.marginTop = '10px';
+      closeButton.addEventListener('click', function() {
+        document.body.removeChild(adOverlay);
+        resolve();
+      });
+      adContent.appendChild(closeButton);
+
+      adOverlay.appendChild(adContent);
+      document.body.appendChild(adOverlay);
     });
   }
 
