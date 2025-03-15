@@ -1,54 +1,137 @@
-// Upewnij się, że cały kod uruchamia się po załadowaniu DOM
 document.addEventListener("DOMContentLoaded", function() {
   console.log("DOM fully loaded and parsed");
+
+  // Funkcja wyświetlająca reklamę jako overlay.
+  // Zamiast alertu tworzy modal z treścią reklamy oraz przyciskiem "Zamknij reklamę".
+  function show_9087151(options = {}) {
+    return new Promise((resolve) => {
+      // Utworzenie elementu nakładki (overlay)
+      let adOverlay = document.createElement('div');
+      adOverlay.id = 'ad-overlay';
+      adOverlay.style.position = 'fixed';
+      adOverlay.style.top = '0';
+      adOverlay.style.left = '0';
+      adOverlay.style.width = '100%';
+      adOverlay.style.height = '100%';
+      adOverlay.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
+      adOverlay.style.display = 'flex';
+      adOverlay.style.justifyContent = 'center';
+      adOverlay.style.alignItems = 'center';
+      adOverlay.style.zIndex = '1000';
+
+      // Utworzenie kontenera z treścią reklamy
+      let adContent = document.createElement('div');
+      adContent.style.background = '#fff';
+      adContent.style.padding = '20px';
+      adContent.style.borderRadius = '8px';
+      adContent.style.textAlign = 'center';
+      if (options.type === 'inApp') {
+        adContent.innerHTML = "<h2>Reklama In-App Interstitial</h2><p>Wyświetlana reklama In-App Interstitial</p>";
+      } else {
+        adContent.innerHTML = "<h2>Reklama</h2><p>Wyświetlana reklama</p>";
+      }
+
+      // Dodanie przycisku do zamknięcia reklamy
+      let closeButton = document.createElement('button');
+      closeButton.textContent = "Zamknij reklamę";
+      closeButton.style.marginTop = '10px';
+      closeButton.addEventListener('click', function() {
+        document.body.removeChild(adOverlay);
+        resolve();
+      });
+      adContent.appendChild(closeButton);
+
+      adOverlay.appendChild(adContent);
+      document.body.appendChild(adOverlay);
+    });
+  }
 
   // ===============================
   // KONFIGURACJA GRY
   // ===============================
-  const boardSize = 6;
-
-  // Pełna lista emoji – wykorzystamy je wszystkie
+  const boardSize = 5;
   const emojis = [
-    "😀","😃","😄","😁","😆","😅","😂","🤣","😊","😇",
-    "🙂","🙃","😉","😌","😍","🥰","😘","😗","😙","😚",
-    "😋","😛","😝","😜","🤪","🤨","🧐","🤓","😎","🤩",
-    "🥳","😏","😒","😞","😔","😟","😕","🙁","☹️","😣",
-    "😖","😫","😩","🥺","😢","😭","😤","😠","😡","🤬",
-    "🤯","😳","🥵","🥶","😱","😨","😰","😥","😓","🤗",
-    "🤔","🤭","🤫","🤥","😶","😐","😑","😬","🙄","😯",
-    "😦","😧","😮","😲","🥱","😴","🤤","😪","😵","🤐",
-    "🥴","🤢","🤮","🤧","😷","🤒","🤕"
+    "🍌", "🍎", "🍓", "🍇", "🍒", "🍊", "🍍", "🥝", "🍑", "🍉",
+    "🍏", "🥭", "🍐", "🍋", "🥥", "🍅", "🥑", "🍆", "🌽", "🥕",
+    "🍔", "🍟", "🍕", "🌭", "🥪", "🍜", "🍣", "🍩", "🍪", "☕"
   ];
-
-  // Funkcja obliczająca cel dla danego poziomu:
-  // Na poziomie 1: cel = 3, na poziomie 1000: cel = 100 (liniowo)
+  const OBSTACLE = "🧱";
+  
   function getTargetForLevel(level) {
     return Math.floor(3 + (level - 1) * (100 - 3) / (1000 - 1));
   }
-
-  // Funkcja określająca liczbę typów emoji używanych w danym poziomie:
-  // Na poziomie 1: 4 typy, na poziomie 1000: 20 typów (liniowo)
+  
   function getNumEmojiTypesForLevel(level) {
     return Math.min(20, 4 + Math.floor((level - 1) * (20 - 4) / (1000 - 1)));
   }
-
-  // Zwraca aktualnie używane typy emoji (podzbiór pełnej listy)
+  
   function getCurrentEmojiTypes() {
     const count = getNumEmojiTypesForLevel(currentLevel);
-    return emojis.slice(0, count);
+    const offset = (currentLevel - 1) % emojis.length;
+    const rotated = [...emojis.slice(offset), ...emojis.slice(0, offset)];
+    return rotated.slice(0, count);
   }
-
+  
+  function generateNewTile(row, col) {
+    const currentEmojis = getCurrentEmojiTypes();
+    let candidates = currentEmojis.slice();
+    if (col >= 2) {
+      const leftEmoji = board[row][col-1];
+      const leftEmoji2 = board[row][col-2];
+      if (leftEmoji && leftEmoji === leftEmoji2) {
+        candidates = candidates.filter(e => e !== leftEmoji);
+      }
+    }
+    if (row <= boardSize - 3) {
+      const belowEmoji = board[row+1][col];
+      const belowEmoji2 = board[row+2][col];
+      if (belowEmoji && belowEmoji === belowEmoji2) {
+        candidates = candidates.filter(e => e !== belowEmoji);
+      }
+    }
+    if (candidates.length === 0) {
+      return currentEmojis[Math.floor(Math.random() * currentEmojis.length)];
+    } else {
+      return candidates[Math.floor(Math.random() * candidates.length)];
+    }
+  }
+  
+  function addObstacles() {
+    if (currentLevel < 3) return;
+    const p = Math.min(0.3, 0.1 + (currentLevel - 3) * 0.02);
+    for (let r = 0; r < boardSize; r++) {
+      for (let c = 0; c < boardSize; c++) {
+        if (board[r][c] !== OBSTACLE && Math.random() < p) {
+          board[r][c] = OBSTACLE;
+        }
+      }
+    }
+  }
+  
+  function removeObstacles() {
+    for (let r = 0; r < boardSize; r++) {
+      for (let c = 0; c < boardSize; c++) {
+        if (board[r][c] === OBSTACLE) {
+          board[r][c] = null;
+        }
+      }
+    }
+    applyGravity();
+    renderBoard();
+    adObstacleElement.classList.add("hidden");
+  }
+  
   // ===============================
   // ZMIENNE GLOBALNE
   // ===============================
   let currentLevel = 1;
-  let safeGoal = {};   // cel dla każdego emoji w bieżącym poziomie
-  let progress = {};   // postęp zbierania dla każdego emoji
+  let safeGoal = {};
+  let progress = {};
   let board = [];
   let selectedCell = null;
   let username = "";
-  let availableMoves = 0;  // liczba ruchów dostępnych na poziomie
-
+  let availableMoves = 50;
+  
   // ===============================
   // ELEMENTY DOM
   // ===============================
@@ -57,15 +140,15 @@ document.addEventListener("DOMContentLoaded", function() {
   const movesCounterElement = document.getElementById("moves-counter");
   const adMessageElement = document.getElementById("ad-message");
   const adBtn = document.getElementById("ad-btn");
+  const adObstacleElement = document.getElementById("ad-obstacle");
+  const adObstacleBtn = document.getElementById("ad-obstacle-btn");
   const messageElement = document.getElementById("message");
-  const restartBtn = document.getElementById("restart-btn");
   const userDisplay = document.getElementById("user-display");
-
   const usernameModal = document.getElementById("username-modal");
   const usernameInput = document.getElementById("username-input");
   const usernameSubmit = document.getElementById("username-submit");
   const gameContainer = document.getElementById("game-container");
-
+  
   // ===============================
   // ZAPIS/ODCZYT STANU GRY
   // ===============================
@@ -80,7 +163,7 @@ document.addEventListener("DOMContentLoaded", function() {
     };
     localStorage.setItem("gameState", JSON.stringify(state));
   }
-
+  
   function loadGameState() {
     const stateStr = localStorage.getItem("gameState");
     if (stateStr) {
@@ -99,31 +182,41 @@ document.addEventListener("DOMContentLoaded", function() {
     }
     return false;
   }
-
-  // ===============================
-  // INICJALIZACJA GRY
-  // ===============================
+  
+  function showEncouragement() {
+    const messages = ["Świetnie!", "Super!", "Tak trzymaj!", "Rewelacja!", "Brawo!"];
+    const msg = messages[Math.floor(Math.random() * messages.length)];
+    if (messageElement.textContent === "") {
+      messageElement.textContent = msg;
+      setTimeout(() => {
+        if (messageElement.textContent === msg) {
+          messageElement.textContent = "";
+        }
+      }, 500);
+    }
+  }
+  
   function initGame() {
     if (!loadGameState()) {
       currentLevel = 1;
       const currentEmojis = getCurrentEmojiTypes();
       safeGoal = {};
       progress = {};
-      for (let e of currentEmojis) {
-        safeGoal[e] = getTargetForLevel(currentLevel);
-        progress[e] = 0;
+      for (let i = 0; i < currentEmojis.length; i++) {
+        safeGoal[currentEmojis[i]] = Math.floor(getTargetForLevel(currentLevel) * (1 + i * 0.2));
+        progress[currentEmojis[i]] = 0;
       }
       initBoard();
-      // Obliczamy liczbę dostępnych ruchów (przyjmujemy, że średnio jeden ruch daje 3 trafienia)
-      availableMoves = Math.ceil((currentEmojis.length * safeGoal[currentEmojis[0]]) / 3);
+      availableMoves = 50;
+    } else {
+      boardElement.style.pointerEvents = "auto";
     }
     renderBoard();
     updateGoalDisplay();
     updateMovesDisplay();
     updateUserDisplay();
   }
-
-  // Inicjalizacja planszy – generujemy planszę używając aktualnie dozwolonego zbioru emoji
+  
   function initBoard() {
     const currentEmojis = getCurrentEmojiTypes();
     board = [];
@@ -141,11 +234,9 @@ document.addEventListener("DOMContentLoaded", function() {
       }
       board.push(row);
     }
+    addObstacles();
   }
-
-  // ===============================
-  // RENDEROWANIE I AKTUALIZACJE
-  // ===============================
+  
   function renderBoard() {
     boardElement.innerHTML = "";
     for (let r = 0; r < boardSize; r++) {
@@ -155,47 +246,49 @@ document.addEventListener("DOMContentLoaded", function() {
         cell.dataset.row = r;
         cell.dataset.col = c;
         cell.textContent = board[r][c];
-        cell.addEventListener("click", onCellClick);
+        if (board[r][c] === OBSTACLE) {
+          cell.classList.add("obstacle");
+        } else {
+          cell.addEventListener("click", onCellClick);
+        }
         boardElement.appendChild(cell);
       }
     }
+    if (board.flat().includes(OBSTACLE)) {
+      adObstacleElement.classList.remove("hidden");
+    } else {
+      adObstacleElement.classList.add("hidden");
+    }
     saveGameState();
   }
-
+  
   function updateGoalDisplay() {
     const currentEmojis = getCurrentEmojiTypes();
     let html = `<strong>Cel (Poziom ${currentLevel}):</strong> `;
     for (let e of currentEmojis) {
-      if (progress[e] >= safeGoal[e]) {
-        html += `${e}: ✅ &nbsp;&nbsp;`;
-      } else {
-        html += `${e}: ${progress[e]}/${safeGoal[e]} &nbsp;&nbsp;`;
-      }
+      html += progress[e] >= safeGoal[e]
+        ? `${e}: ✅ &nbsp;&nbsp;`
+        : `${e}: ${progress[e]}/${safeGoal[e]} &nbsp;&nbsp;`;
     }
     goalElement.innerHTML = html;
   }
-
+  
   function updateMovesDisplay() {
     movesCounterElement.textContent = `Pozostałe ruchy: ${availableMoves}`;
   }
-
+  
   function updateUserDisplay() {
     userDisplay.textContent = `Witaj, ${username}!`;
   }
-
-  // ===============================
-  // OBSŁUGA KLIKNIĘĆ I ANIMACJI
-  // ===============================
+  
   function onCellClick(e) {
     if (availableMoves <= 0) {
       showAdMessage();
       return;
     }
-    
     const cellDiv = e.currentTarget;
     const r = parseInt(cellDiv.dataset.row);
     const c = parseInt(cellDiv.dataset.col);
-
     if (!selectedCell) {
       selectedCell = { r, c, element: cellDiv };
       cellDiv.classList.add("selected");
@@ -206,6 +299,11 @@ document.addEventListener("DOMContentLoaded", function() {
         return;
       }
       if (isAdjacent(selectedCell.r, selectedCell.c, r, c)) {
+        if (board[selectedCell.r][selectedCell.c] === OBSTACLE || board[r][c] === OBSTACLE) {
+          selectedCell.element.classList.remove("selected");
+          selectedCell = null;
+          return;
+        }
         availableMoves--;
         updateMovesDisplay();
         swapCells(selectedCell.r, selectedCell.c, r, c);
@@ -218,19 +316,17 @@ document.addEventListener("DOMContentLoaded", function() {
       }
     }
   }
-
+  
   function isAdjacent(r1, c1, r2, c2) {
     return (Math.abs(r1 - r2) + Math.abs(c1 - c2)) === 1;
   }
-
+  
   function animateSwap(cell1, cell2, callback) {
     const boardRect = boardElement.getBoundingClientRect();
     const rect1 = cell1.getBoundingClientRect();
     const rect2 = cell2.getBoundingClientRect();
-
     const offset1 = { x: rect1.left - boardRect.left, y: rect1.top - boardRect.top };
     const offset2 = { x: rect2.left - boardRect.left, y: rect2.top - boardRect.top };
-
     const clone1 = cell1.cloneNode(true);
     const clone2 = cell2.cloneNode(true);
     clone1.classList.add('animate');
@@ -239,18 +335,14 @@ document.addEventListener("DOMContentLoaded", function() {
     clone1.style.top = offset1.y + 'px';
     clone2.style.left = offset2.x + 'px';
     clone2.style.top = offset2.y + 'px';
-
     boardElement.appendChild(clone1);
     boardElement.appendChild(clone2);
-
     cell1.style.visibility = 'hidden';
     cell2.style.visibility = 'hidden';
-
     requestAnimationFrame(() => {
       clone1.style.transform = `translate(${offset2.x - offset1.x}px, ${offset2.y - offset1.y}px)`;
       clone2.style.transform = `translate(${offset1.x - offset2.x}px, ${offset1.y - offset2.y}px)`;
     });
-
     let finished = 0;
     function onTransitionEnd() {
       finished++;
@@ -265,17 +357,16 @@ document.addEventListener("DOMContentLoaded", function() {
     clone1.addEventListener('transitionend', onTransitionEnd, { once: true });
     clone2.addEventListener('transitionend', onTransitionEnd, { once: true });
   }
-
+  
   function swapCells(r1, c1, r2, c2) {
     const cell1 = document.querySelector(`.cell[data-row='${r1}'][data-col='${c1}']`);
     const cell2 = document.querySelector(`.cell[data-row='${r2}'][data-col='${c2}']`);
-
     animateSwap(cell1, cell2, () => {
       [board[r1][c1], board[r2][c2]] = [board[r2][c2], board[r1][c1]];
       renderBoard();
-
       const matches = findMatches();
       if (matches.length > 0) {
+        showEncouragement();
         processMatches(matches);
       } else {
         const newCell1 = document.querySelector(`.cell[data-row='${r1}'][data-col='${c1}']`);
@@ -287,16 +378,17 @@ document.addEventListener("DOMContentLoaded", function() {
       }
     });
   }
-
+  
   // ===============================
   // MATCH-3 LOGIKA
   // ===============================
   function findMatches() {
     let matches = [];
+    // Sprawdzenie rzędów
     for (let r = 0; r < boardSize; r++) {
       let count = 1;
       for (let c = 1; c < boardSize; c++) {
-        if (board[r][c] === board[r][c - 1]) {
+        if (board[r][c] === board[r][c - 1] && board[r][c] !== OBSTACLE) {
           count++;
         } else {
           if (count >= 3) {
@@ -313,10 +405,11 @@ document.addEventListener("DOMContentLoaded", function() {
         }
       }
     }
+    // Sprawdzenie kolumn
     for (let c = 0; c < boardSize; c++) {
       let count = 1;
       for (let r = 1; r < boardSize; r++) {
-        if (board[r][c] === board[r - 1][c]) {
+        if (board[r][c] === board[r - 1][c] && board[r][c] !== OBSTACLE) {
           count++;
         } else {
           if (count >= 3) {
@@ -344,25 +437,97 @@ document.addEventListener("DOMContentLoaded", function() {
     }
     return uniqueMatches;
   }
-
+  
   function processMatches(matches) {
+    let matchedCoords = new Set();
     for (let match of matches) {
-      let e = board[match.r][match.c];
-      if (progress.hasOwnProperty(e)) {
-        progress[e]++;
+      matchedCoords.add(`${match.r},${match.c}`);
+      let tile = board[match.r][match.c];
+      if (tile !== OBSTACLE) {
+        if (progress.hasOwnProperty(tile)) {
+          progress[tile]++;
+        }
       }
-      board[match.r][match.c] = randomEmoji();
     }
-    renderBoard();
-    updateGoalDisplay();
-    checkVictory();
+    // Usuwanie przeszkód przylegających do trafionych kafelków
+    for (let r = 0; r < boardSize; r++) {
+      for (let c = 0; c < boardSize; c++) {
+        if (board[r][c] === OBSTACLE) {
+          if ((r > 0 && matchedCoords.has(`${r-1},${c}`)) ||
+              (r < boardSize - 1 && matchedCoords.has(`${r+1},${c}`)) ||
+              (c > 0 && matchedCoords.has(`${r},${c-1}`)) ||
+              (c < boardSize - 1 && matchedCoords.has(`${r},${c+1}`))) {
+            matchedCoords.add(`${r},${c}`);
+          }
+        }
+      }
+    }
+    document.querySelectorAll('.cell').forEach(cell => {
+      let r = cell.dataset.row;
+      let c = cell.dataset.col;
+      if (matchedCoords.has(`${r},${c}`)) {
+        cell.classList.add("disappear");
+      }
+    });
+    setTimeout(() => {
+      for (let match of matches) {
+        board[match.r][match.c] = null;
+      }
+      applyGravity();
+      renderBoard();
+      document.querySelectorAll('.cell').forEach(cell => {
+        cell.classList.add("drop");
+      });
+      setTimeout(() => {
+        document.querySelectorAll('.cell').forEach(cell => {
+          cell.classList.remove("drop");
+        });
+        updateGoalDisplay();
+        checkVictory();
+        setTimeout(() => {
+          const newMatches = findMatches();
+          if (newMatches.length > 0) {
+            processMatches(newMatches);
+          }
+        }, 100);
+      }, 500);
+    }, 300);
   }
-
+  
+  // ===============================
+  // NOWA FUNKCJA GRAWITACJI
+  // ===============================
+  function applyGravity() {
+    let moved;
+    do {
+      moved = false;
+      for (let col = 0; col < boardSize; col++) {
+        for (let row = boardSize - 1; row > 0; row--) {
+          if (board[row][col] === null &&
+              board[row - 1][col] !== null &&
+              board[row - 1][col] !== OBSTACLE) {
+            board[row][col] = board[row - 1][col];
+            board[row - 1][col] = null;
+            moved = true;
+          }
+        }
+      }
+    } while (moved);
+    
+    for (let col = 0; col < boardSize; col++) {
+      for (let row = 0; row < boardSize; row++) {
+        if (board[row][col] === null) {
+          board[row][col] = generateNewTile(row, col);
+        }
+      }
+    }
+  }
+  
   function randomEmoji() {
     const currentEmojis = getCurrentEmojiTypes();
     return currentEmojis[Math.floor(Math.random() * currentEmojis.length)];
   }
-
+  
   // ===============================
   // WARUNEK ZWYCIĘSTWA I KOLEJNE POZIOMY
   // ===============================
@@ -383,13 +548,14 @@ document.addEventListener("DOMContentLoaded", function() {
       messageElement.textContent = "";
     }
   }
-
+  
   function disableBoard() {
-    const newBoard = boardElement.cloneNode(true);
-    boardElement.parentNode.replaceChild(newBoard, boardElement);
+    boardElement.style.pointerEvents = "none";
   }
-
-  // Animacja otwierania sejfu
+  
+  // ===============================
+  // OTWIERANIE SEJFU I PRZEJŚCIE DO KOLEJNEGO POZIOMU
+  // ===============================
   function openSafeAnimation() {
     const safeContainer = document.getElementById("safe-container");
     const safeElement = document.getElementById("safe");
@@ -397,95 +563,89 @@ document.addEventListener("DOMContentLoaded", function() {
     setTimeout(() => {
       safeContainer.classList.add("show");
     }, 50);
-    
-    // Dodaj reklamy in-app interstitial po ukończeniu wielokrotności 5 poziomów
-    if (currentLevel % 5 === 0) {
-      setTimeout(() => {
-        show_9087151({
-          type: 'inApp',
-          inAppSettings: {
-            frequency: 2,
-            capping: 0.1,
-            interval: 30,
-            timeout: 5,
-            everyPage: false
-          }
-        });
-      }, 1000);
-    }
-    
     setTimeout(() => {
       safeElement.textContent = "🔓";
       messageElement.textContent = "Poziom ukończony! Przechodzisz do kolejnego...";
       setTimeout(() => {
-        nextLevel();
+        // Jeśli ukończony poziom (currentLevel) jest podzielny przez 5, wyświetlamy reklamę In-App Interstitial
+        // Ustawienia: 2 reklamy w ciągu 0.1 godziny (6 minut) z interwałem 30 sekund między nimi oraz 5-sekundowym opóźnieniem przed pierwszą.
+        if (currentLevel % 5 === 0) {
+          show_9087151({
+            type: 'inApp',
+            inAppSettings: { 
+              frequency: 2, 
+              capping: 0.1, 
+              interval: 30, 
+              timeout: 5, 
+              everyPage: false 
+            }
+          }).then(() => {
+            nextLevel();
+          });
+        } else {
+          nextLevel();
+        }
       }, 2000);
     }, 600);
   }
-
+  
   function nextLevel() {
     currentLevel++;
     const currentEmojis = getCurrentEmojiTypes();
     safeGoal = {};
     progress = {};
-    for (let e of currentEmojis) {
-      safeGoal[e] = getTargetForLevel(currentLevel);
-      progress[e] = 0;
+    for (let i = 0; i < currentEmojis.length; i++) {
+      safeGoal[currentEmojis[i]] = Math.floor(getTargetForLevel(currentLevel) * (1 + i * 0.2));
+      progress[currentEmojis[i]] = 0;
     }
-    availableMoves = Math.ceil((currentEmojis.length * safeGoal[currentEmojis[0]]) / 3);
     const safeContainer = document.getElementById("safe-container");
     safeContainer.classList.remove("show");
     safeContainer.classList.add("hidden");
     document.getElementById("safe").textContent = "🔒";
-    messageElement.textContent = "";
+    boardElement.style.pointerEvents = "auto";
     initBoard();
     renderBoard();
     updateGoalDisplay();
     updateMovesDisplay();
     saveGameState();
+    messageElement.textContent = "";
+    setTimeout(() => {
+      const newMatches = findMatches();
+      if (newMatches.length > 0) {
+        processMatches(newMatches);
+      }
+    }, 100);
   }
-
-  // ===============================
-  // OBSŁUGA DODATKOWYCH RUCHÓW PRZEZ REKLAMĘ (Rewarded Ads)
-  // ===============================
+  
   function showAdMessage() {
     adMessageElement.classList.remove("hidden");
   }
-
+  
+  // ===============================
+  // OBSŁUGA REKLAM DLA DODATKOWYCH RUCHÓW
+  // ===============================
   adBtn.addEventListener("click", function() {
-    // Wywołanie reklamy nagradzanej – po jej obejrzeniu gracz otrzymuje 10 dodatkowych ruchów
     show_9087151().then(() => {
-      availableMoves += 10;
+      availableMoves += 50;
       updateMovesDisplay();
       adMessageElement.classList.add("hidden");
       saveGameState();
+      alert('You have seen an ad!');
     });
   });
-
+  
   // ===============================
-  // OBSŁUGA PRZYCISKU RESTART
+  // OBSŁUGA REKLAMY DO USUWANIA PRZESZKÓD
   // ===============================
-  restartBtn.addEventListener("click", function() {
-    currentLevel = 1;
-    const currentEmojis = getCurrentEmojiTypes();
-    safeGoal = {};
-    progress = {};
-    for (let e of currentEmojis) {
-      safeGoal[e] = getTargetForLevel(currentLevel);
-      progress[e] = 0;
-    }
-    messageElement.textContent = "";
-    const safeContainer = document.getElementById("safe-container");
-    safeContainer.classList.remove("show");
-    safeContainer.classList.add("hidden");
-    initBoard();
-    renderBoard();
-    updateGoalDisplay();
-    availableMoves = Math.ceil((currentEmojis.length * safeGoal[currentEmojis[0]]) / 3);
-    updateMovesDisplay();
-    saveGameState();
+  adObstacleBtn.addEventListener("click", function() {
+    show_9087151().then(() => {
+      removeObstacles();
+      updateMovesDisplay();
+      saveGameState();
+      alert('You have seen an ad!');
+    });
   });
-
+  
   // ===============================
   // OBSŁUGA MODALA NA NAZWĘ UŻYTKOWNIKA
   // ===============================
@@ -495,25 +655,24 @@ document.addEventListener("DOMContentLoaded", function() {
     if (name) {
       username = name;
       localStorage.setItem("username", username);
-      usernameModal.classList.add("hidden");
-      gameContainer.classList.remove("hidden");
+      localStorage.removeItem("gameState");
+      usernameModal.style.display = 'none';
+      gameContainer.style.display = 'block';
       updateUserDisplay();
       initGame();
     } else {
       alert("Wpisz nazwę użytkownika!");
     }
   });
-
-  // Jeśli użytkownik już podał nazwę, ładujemy ją i uruchamiamy grę
+  
   const savedName = localStorage.getItem("username");
   if (savedName) {
     username = savedName;
-    usernameModal.classList.add("hidden");
-    gameContainer.classList.remove("hidden");
+    usernameModal.style.display = 'none';
+    gameContainer.style.display = 'block';
     updateUserDisplay();
     initGame();
   }
   
-  // Zapis stanu gry przy opuszczeniu strony
   window.addEventListener("beforeunload", saveGameState);
 });
