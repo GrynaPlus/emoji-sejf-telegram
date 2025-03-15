@@ -7,35 +7,6 @@
   <link rel="stylesheet" href="style.css">
   <!-- Ładowanie biblioteki Telegram Web App (opcjonalnie) -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  
-  <!-- Firebase konfiguracja i inicjalizacja (moduł) -->
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-app.js";
-    import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-analytics.js";
-    import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-database.js";
-
-    // Konfiguracja Twojego projektu Firebase
-    const firebaseConfig = {
-      apiKey: "AIzaSyA1_vrRzSreBVEcwVxbFUFi_D38_Cdy6bI",
-      authDomain: "emoji-sejf.firebaseapp.com",
-      projectId: "emoji-sejf",
-      storageBucket: "emoji-sejf.firebasestorage.app",
-      messagingSenderId: "513275838348",
-      appId: "1:513275838348:web:4e2ee58a7638e1dc40e0a9",
-      measurementId: "G-2Y2GT3NDSX"
-    };
-
-    // Inicjalizacja Firebase
-    const app = initializeApp(firebaseConfig);
-    const analytics = getAnalytics(app);
-    const database = getDatabase(app);
-
-    // Ustaw globalnie instancje i funkcje Firebase,
-    // aby można było z nich korzystać w tradycyjnym pliku script.js
-    window.firebaseDatabase = database;
-    window.firebaseRef = ref;
-    window.firebaseSet = set;
-  </script>
 </head>
 <body>
   <!-- Modal wyboru nazwy użytkownika -->
@@ -71,8 +42,6 @@
     </div>
     <div id="message"></div>
   </div>
-  
-  <!-- Wczytaj główny skrypt gry -->
   <script src="script.js"></script>
 </body>
 </html>
