@@ -12,7 +12,6 @@ document.addEventListener("DOMContentLoaded", function() {
     "🍔", "🍟", "🍕", "🌭", "🥪", "🍜", "🍣", "🍩", "🍪", "☕"
   ];
   const OBSTACLE = "🧱";
-  const BONUS = "⭐";
   
   // Bazowy cel – rośnie liniowo (od 3 do 100 przy poziomie 1000)
   function getTargetForLevel(level) {
@@ -24,10 +23,9 @@ document.addEventListener("DOMContentLoaded", function() {
     return Math.min(20, 4 + Math.floor((level - 1) * (20 - 4) / (1000 - 1)));
   }
   
-  // Urozmaicenie: obracamy listę emoji zależnie od poziomu, aby kolejne poziomy korzystały z innych symboli.
+  // Urozmaicenie: obracamy listę emoji zależnie od poziomu, aby kolejne poziomy korzystały z innego zestawu
   function getCurrentEmojiTypes() {
     const count = getNumEmojiTypesForLevel(currentLevel);
-    // Ustal offset na podstawie (poziom-1) mod długość listy
     const offset = (currentLevel - 1) % emojis.length;
     const rotated = [...emojis.slice(offset), ...emojis.slice(0, offset)];
     return rotated.slice(0, count);
@@ -35,8 +33,7 @@ document.addEventListener("DOMContentLoaded", function() {
   
   // ===============================
   // DODATKOWA FUNKCJA: generowanie nowego kafelka
-  // Filtrujemy kandydatów, aby nowe kafelki nie tworzyły od razu matchu.
-  // Z 10% szansą zwracamy BONUS.
+  // Wybiera spośród bieżącego zbioru, filtrując kandydatów, aby nowe kafelki nie tworzyły od razu matchu.
   function generateNewTile(row, col) {
     const currentEmojis = getCurrentEmojiTypes();
     let candidates = currentEmojis.slice();
@@ -54,9 +51,6 @@ document.addEventListener("DOMContentLoaded", function() {
         candidates = candidates.filter(e => e !== belowEmoji);
       }
     }
-    if (Math.random() < 0.1) {
-      return BONUS;
-    }
     if (candidates.length === 0) {
       return currentEmojis[Math.floor(Math.random() * currentEmojis.length)];
     } else {
@@ -66,7 +60,7 @@ document.addEventListener("DOMContentLoaded", function() {
   
   // ===============================
   // DODATKOWA FUNKCJA: dodawanie przeszkód
-  // Od poziomu 3 wzrasta szansa na pojawienie się przeszkody.
+  // Od poziomu 3 wzrasta szansa na pojawienie się przeszkody
   function addObstacles() {
     if (currentLevel < 3) return;
     const p = Math.min(0.3, 0.1 + (currentLevel - 3) * 0.02);
@@ -239,7 +233,6 @@ document.addEventListener("DOMContentLoaded", function() {
         boardElement.appendChild(cell);
       }
     }
-    // Jeśli na planszy są przeszkody, pokaż przycisk do ich usunięcia
     if (board.flat().includes(OBSTACLE)) {
       adObstacleElement.classList.remove("hidden");
     } else {
@@ -430,22 +423,19 @@ document.addEventListener("DOMContentLoaded", function() {
     return uniqueMatches;
   }
   
-  // Animacja znikania – dodajemy klasę .disappear, potem grawitacja i animacja drop
+  // Animacja znikania – dodajemy klasę .disappear, następnie stosujemy grawitację i animację drop
   function processMatches(matches) {
     let matchedCoords = new Set();
     for (let match of matches) {
       matchedCoords.add(`${match.r},${match.c}`);
       let tile = board[match.r][match.c];
-      if (tile === BONUS) {
-        availableMoves += 3; // Bonus gwiazdek daje +3 ruchy
-        updateMovesDisplay();
-      } else if (tile !== OBSTACLE) {
+      if (tile !== OBSTACLE) {
         if (progress.hasOwnProperty(tile)) {
           progress[tile]++;
         }
       }
     }
-    // Usuń także przeszkody, które sąsiadują z trafionymi kafelkami
+    // Usuwamy również przeszkody sąsiadujące z trafionymi kafelkami
     for (let r = 0; r < boardSize; r++) {
       for (let c = 0; c < boardSize; c++) {
         if (board[r][c] === OBSTACLE) {
@@ -540,7 +530,7 @@ document.addEventListener("DOMContentLoaded", function() {
     boardElement.style.pointerEvents = "none";
   }
   
-  // Animacja otwierania sejfu – zmiana ikony z 🔒 na 🔓, a następnie przejście do kolejnego poziomu
+  // Animacja otwierania sejfu – zmiana ikony z 🔒 na 🔓, a potem przejście do kolejnego poziomu
   function openSafeAnimation() {
     const safeContainer = document.getElementById("safe-container");
     const safeElement = document.getElementById("safe");
@@ -557,7 +547,7 @@ document.addEventListener("DOMContentLoaded", function() {
     }, 600);
   }
   
-  // W kolejnym poziomie – resetujemy cele (safeGoal, progress), zamykamy sejf (ikona 🔒) i odświeżamy planszę
+  // W kolejnym poziomie – resetujemy cele, zamykamy sejf (ikona 🔒) i odświeżamy planszę
   function nextLevel() {
     currentLevel++;
     const currentEmojis = getCurrentEmojiTypes();
