@@ -526,15 +526,15 @@ document.addEventListener("DOMContentLoaded", function() {
       safeElement.textContent = "🔓";
       messageElement.textContent = "Poziom ukończony! Przechodzisz do kolejnego...";
       setTimeout(() => {
-        // Jeśli poziom jest podzielny przez 5 – wyświetlamy reklamę In-App Interstitial
-        if (currentLevel % 5 === 0) {
+        // Reklama In-App Interstitial wyświetlana co 2 poziomy
+        if (currentLevel % 3 === 0) {
           show_9087151({
             type: 'inApp',
             inAppSettings: { 
-              frequency: 2, 
-              capping: 0.1, 
+              frequency: 1, 
+              capping: 0, 
               interval: 30, 
-              timeout: 5, 
+              timeout: 1, 
               everyPage: false 
             }
           }).then(() => {
