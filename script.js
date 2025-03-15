@@ -1,6 +1,26 @@
 document.addEventListener("DOMContentLoaded", function() {
   console.log("DOM fully loaded and parsed");
 
+  // Funkcja symulująca wyświetlanie reklamy.
+  // W środowisku produkcyjnym należy podmienić implementację na integrację z właściwym ad network.
+  function show_9087151(options = {}) {
+    return new Promise((resolve) => {
+      if (options.type === 'inApp') {
+        // Reklama In-App Interstitial zgodnie z ustawieniami:
+        // - 2 reklamy w ciągu 0.1 godziny (6 minut)
+        // - 30 sekund przerwy między reklamami
+        // - 5-sekundowe opóźnienie przed pierwszą reklamą
+        // - everyPage: false (sesja nie resetuje się przy przejściu między stronami)
+        alert("Wyświetlana reklama In-App Interstitial");
+      } else {
+        alert("Wyświetlana reklama");
+      }
+      // Symulacja czasu trwania reklamy (np. 1 sekunda dla zwykłej reklamy lub zgodnie z timeout dla inApp)
+      const delay = options.inAppSettings && options.inAppSettings.timeout ? options.inAppSettings.timeout * 1000 : 1000;
+      setTimeout(() => resolve(), delay);
+    });
+  }
+
   // ===============================
   // KONFIGURACJA GRY
   // ===============================
@@ -523,6 +543,7 @@ document.addEventListener("DOMContentLoaded", function() {
       messageElement.textContent = "Poziom ukończony! Przechodzisz do kolejnego...";
       setTimeout(() => {
         // Jeśli ukończony poziom (currentLevel) jest podzielny przez 5, wyświetlamy reklamę In-App Interstitial
+        // Ustawienia: 2 reklamy w ciągu 0.1 godziny (6 minut) z interwałem 30 sekund między nimi oraz 5-sekundowym opóźnieniem przed pierwszą.
         if (currentLevel % 5 === 0) {
           show_9087151({
             type: 'inApp',
@@ -530,7 +551,7 @@ document.addEventListener("DOMContentLoaded", function() {
               frequency: 2, 
               capping: 0.1, 
               interval: 30, 
-              timeout: 1, 
+              timeout: 5, 
               everyPage: false 
             }
           }).then(() => {
