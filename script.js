@@ -625,6 +625,7 @@ document.addEventListener("DOMContentLoaded", function() {
   // OBSŁUGA REKLAM DLA DODATKOWYCH RUCHÓW
   // ===============================
   adBtn.addEventListener("click", function() {
+    // Wyświetlenie rewarded interstitial z sieci Monetag
     show_9087151().then(() => {
       availableMoves += 50;
       updateMovesDisplay();
@@ -638,6 +639,7 @@ document.addEventListener("DOMContentLoaded", function() {
   // OBSŁUGA REKLAMY DO USUWANIA PRZESZKÓD
   // ===============================
   adObstacleBtn.addEventListener("click", function() {
+    // Wyświetlenie rewarded interstitial z sieci Monetag
     show_9087151().then(() => {
       removeObstacles();
       updateMovesDisplay();
