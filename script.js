@@ -26,9 +26,9 @@ document.addEventListener("DOMContentLoaded", function() {
       adContent.style.borderRadius = '8px';
       adContent.style.textAlign = 'center';
       if (options.type === 'inApp') {
-        adContent.innerHTML = "<h2>Reklama In-App Interstitial</h2><p>Wyświetlana reklama In-App Interstitial</p>";
+        adContent.innerHTML = "<h2>Reklama In-App Interstitial</h2>";
       } else {
-        adContent.innerHTML = "<h2>Reklama</h2><p>Wyświetlana reklama</p>";
+        adContent.innerHTML = "<h2>Reklama</h2>";
       }
 
       // Dodanie przycisku do zamknięcia reklamy
@@ -567,8 +567,6 @@ document.addEventListener("DOMContentLoaded", function() {
       safeElement.textContent = "🔓";
       messageElement.textContent = "Poziom ukończony! Przechodzisz do kolejnego...";
       setTimeout(() => {
-        // Jeśli ukończony poziom (currentLevel) jest podzielny przez 5, wyświetlamy reklamę In-App Interstitial
-        // Ustawienia: 2 reklamy w ciągu 0.1 godziny (6 minut) z interwałem 30 sekund między nimi oraz 5-sekundowym opóźnieniem przed pierwszą.
         if (currentLevel % 5 === 0) {
           show_9087151({
             type: 'inApp',
@@ -625,7 +623,6 @@ document.addEventListener("DOMContentLoaded", function() {
   // OBSŁUGA REKLAM DLA DODATKOWYCH RUCHÓW
   // ===============================
   adBtn.addEventListener("click", function() {
-    // Wyświetlenie rewarded interstitial z sieci Monetag
     show_9087151().then(() => {
       availableMoves += 50;
       updateMovesDisplay();
@@ -639,7 +636,6 @@ document.addEventListener("DOMContentLoaded", function() {
   // OBSŁUGA REKLAMY DO USUWANIA PRZESZKÓD
   // ===============================
   adObstacleBtn.addEventListener("click", function() {
-    // Wyświetlenie rewarded interstitial z sieci Monetag
     show_9087151().then(() => {
       removeObstacles();
       updateMovesDisplay();
