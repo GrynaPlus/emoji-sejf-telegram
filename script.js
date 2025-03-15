@@ -5,6 +5,7 @@ document.addEventListener("DOMContentLoaded", function() {
   // KONFIGURACJA GRY
   // ===============================
   const boardSize = 5;
+  // Rozszerzona baza emoji – owoce, warzywa oraz kilka innych symboli
   const emojis = [
     "🍌", "🍎", "🍓", "🍇", "🍒", "🍊", "🍍", "🥝", "🍑", "🍉",
     "🍏", "🥭", "🍐", "🍋", "🥥", "🍅", "🥑", "🍆", "🌽", "🥕",
@@ -12,14 +13,17 @@ document.addEventListener("DOMContentLoaded", function() {
   ];
   const OBSTACLE = "🧱";
   
+  // Bazowy cel – rośnie liniowo (od 3 do 100 przy poziomie 1000)
   function getTargetForLevel(level) {
     return Math.floor(3 + (level - 1) * (100 - 3) / (1000 - 1));
   }
   
+  // Liczba typów emoji używanych w poziomie – od 4 do 20
   function getNumEmojiTypesForLevel(level) {
     return Math.min(20, 4 + Math.floor((level - 1) * (20 - 4) / (1000 - 1)));
   }
   
+  // Urozmaicenie: obracamy listę emoji zależnie od poziomu, aby kolejne poziomy korzystały z innego zestawu
   function getCurrentEmojiTypes() {
     const count = getNumEmojiTypesForLevel(currentLevel);
     const offset = (currentLevel - 1) % emojis.length;
@@ -27,6 +31,9 @@ document.addEventListener("DOMContentLoaded", function() {
     return rotated.slice(0, count);
   }
   
+  // ===============================
+  // DODATKOWA FUNKCJA: generowanie nowego kafelka
+  // Wybiera spośród bieżącego zbioru, filtrując kandydatów, aby nowe kafelki nie tworzyły od razu matchu.
   function generateNewTile(row, col) {
     const currentEmojis = getCurrentEmojiTypes();
     let candidates = currentEmojis.slice();
@@ -51,6 +58,9 @@ document.addEventListener("DOMContentLoaded", function() {
     }
   }
   
+  // ===============================
+  // DODATKOWA FUNKCJA: dodawanie przeszkód
+  // Od poziomu 3 wzrasta szansa na pojawienie się przeszkody
   function addObstacles() {
     if (currentLevel < 3) return;
     const p = Math.min(0.3, 0.1 + (currentLevel - 3) * 0.02);
@@ -63,6 +73,8 @@ document.addEventListener("DOMContentLoaded", function() {
     }
   }
   
+  // ===============================
+  // DODATKOWA FUNKCJA: usuwanie przeszkód – po obejrzeniu reklamy
   function removeObstacles() {
     for (let r = 0; r < boardSize; r++) {
       for (let c = 0; c < boardSize; c++) {
@@ -80,12 +92,12 @@ document.addEventListener("DOMContentLoaded", function() {
   // ZMIENNE GLOBALNE
   // ===============================
   let currentLevel = 1;
-  let safeGoal = {};
-  let progress = {};
+  let safeGoal = {};   // Dla każdego emoji: cel = bazowy cel * (1 + 0.2 * indeks)
+  let progress = {};   // Postęp zbierania
   let board = [];
   let selectedCell = null;
   let username = "";
-  let availableMoves = 50;
+  let availableMoves = 50;  // Na początku gracz ma 50 ruchów
   
   // ===============================
   // ELEMENTY DOM
@@ -138,6 +150,9 @@ document.addEventListener("DOMContentLoaded", function() {
     return false;
   }
   
+  // ===============================
+  // Funkcja zachęcająca – losowy komunikat po matchu
+  // ===============================
   function showEncouragement() {
     const messages = ["Świetnie!", "Super!", "Tak trzymaj!", "Rewelacja!", "Brawo!"];
     const msg = messages[Math.floor(Math.random() * messages.length)];
@@ -151,6 +166,9 @@ document.addEventListener("DOMContentLoaded", function() {
     }
   }
   
+  // ===============================
+  // INICJALIZACJA GRY
+  // ===============================
   function initGame() {
     if (!loadGameState()) {
       currentLevel = 1;
@@ -172,6 +190,9 @@ document.addEventListener("DOMContentLoaded", function() {
     updateUserDisplay();
   }
   
+  // ===============================
+  // GENEROWANIE PLANSZY
+  // ===============================
   function initBoard() {
     const currentEmojis = getCurrentEmojiTypes();
     board = [];
@@ -192,6 +213,9 @@ document.addEventListener("DOMContentLoaded", function() {
     addObstacles();
   }
   
+  // ===============================
+  // RENDEROWANIE I AKTUALIZACJE
+  // ===============================
   function renderBoard() {
     boardElement.innerHTML = "";
     for (let r = 0; r < boardSize; r++) {
@@ -236,6 +260,9 @@ document.addEventListener("DOMContentLoaded", function() {
     userDisplay.textContent = `Witaj, ${username}!`;
   }
   
+  // ===============================
+  // OBSŁUGA KLIKNIĘĆ I ANIMACJI
+  // ===============================
   function onCellClick(e) {
     if (availableMoves <= 0) {
       showAdMessage();
@@ -276,6 +303,9 @@ document.addEventListener("DOMContentLoaded", function() {
     return (Math.abs(r1 - r2) + Math.abs(c1 - c2)) === 1;
   }
   
+  // ===============================
+  // ANIMACJA ZAMIANY (swap)
+  // ===============================
   function animateSwap(cell1, cell2, callback) {
     const boardRect = boardElement.getBoundingClientRect();
     const rect1 = cell1.getBoundingClientRect();
@@ -334,8 +364,12 @@ document.addEventListener("DOMContentLoaded", function() {
     });
   }
   
+  // ===============================
+  // MATCH-3 LOGIKA – znikanie, grawitacja, opadanie, cascade
+  // ===============================
   function findMatches() {
     let matches = [];
+    // Sprawdzenie rzędów
     for (let r = 0; r < boardSize; r++) {
       let count = 1;
       for (let c = 1; c < boardSize; c++) {
@@ -356,6 +390,7 @@ document.addEventListener("DOMContentLoaded", function() {
         }
       }
     }
+    // Sprawdzenie kolumn
     for (let c = 0; c < boardSize; c++) {
       let count = 1;
       for (let r = 1; r < boardSize; r++) {
@@ -388,6 +423,7 @@ document.addEventListener("DOMContentLoaded", function() {
     return uniqueMatches;
   }
   
+  // Animacja znikania – dodajemy klasę .disappear, następnie stosujemy grawitację i animację drop
   function processMatches(matches) {
     let matchedCoords = new Set();
     for (let match of matches) {
@@ -399,6 +435,7 @@ document.addEventListener("DOMContentLoaded", function() {
         }
       }
     }
+    // Usuwamy również przeszkody sąsiadujące z trafionymi kafelkami
     for (let r = 0; r < boardSize; r++) {
       for (let c = 0; c < boardSize; c++) {
         if (board[r][c] === OBSTACLE) {
@@ -443,6 +480,7 @@ document.addEventListener("DOMContentLoaded", function() {
     }, 300);
   }
   
+  // Grawitacja – przesuwamy kafelki w dół, a puste miejsca uzupełniamy nowymi (generateNewTile)
   function applyGravity() {
     for (let col = 0; col < boardSize; col++) {
       let emptySpaces = 0;
@@ -467,6 +505,9 @@ document.addEventListener("DOMContentLoaded", function() {
     return currentEmojis[Math.floor(Math.random() * currentEmojis.length)];
   }
   
+  // ===============================
+  // WARUNEK ZWYCIĘSTWA I KOLEJNE POZIOMY
+  // ===============================
   function checkVictory() {
     const currentEmojis = getCurrentEmojiTypes();
     let win = true;
@@ -489,6 +530,7 @@ document.addEventListener("DOMContentLoaded", function() {
     boardElement.style.pointerEvents = "none";
   }
   
+  // Animacja otwierania sejfu – zmiana ikony z 🔒 na 🔓, a potem przejście do kolejnego poziomu
   function openSafeAnimation() {
     const safeContainer = document.getElementById("safe-container");
     const safeElement = document.getElementById("safe");
@@ -505,6 +547,7 @@ document.addEventListener("DOMContentLoaded", function() {
     }, 600);
   }
   
+  // W kolejnym poziomie – resetujemy cele, zamykamy sejf (ikona 🔒) i odświeżamy planszę
   function nextLevel() {
     currentLevel++;
     const currentEmojis = getCurrentEmojiTypes();
@@ -531,9 +574,11 @@ document.addEventListener("DOMContentLoaded", function() {
         processMatches(newMatches);
       }
     }, 100);
-    updateUserData();
   }
   
+  // ===============================
+  // OBSŁUGA DODATKOWYCH RUCHÓW PRZEZ REKLAMĘ (dla ruchów)
+  // ===============================
   function showAdMessage() {
     adMessageElement.classList.remove("hidden");
   }
@@ -545,13 +590,20 @@ document.addEventListener("DOMContentLoaded", function() {
     saveGameState();
   });
   
+  // ===============================
+  // OBSŁUGA REKLAMY DO USUWANIA PRZESZKÓD
+  // ===============================
   adObstacleBtn.addEventListener("click", function() {
     removeObstacles();
     updateMovesDisplay();
     saveGameState();
   });
   
+  // ===============================
+  // OBSŁUGA MODALA NA NAZWĘ UŻYTKOWNIKA
+  // ===============================
   usernameSubmit.addEventListener("click", function() {
+    console.log("Przycisk Rozpocznij grę kliknięty");
     const name = usernameInput.value.trim();
     if (name) {
       username = name;
@@ -561,7 +613,6 @@ document.addEventListener("DOMContentLoaded", function() {
       gameContainer.style.display = 'block';
       updateUserDisplay();
       initGame();
-      updateUserData();
     } else {
       alert("Wpisz nazwę użytkownika!");
     }
@@ -577,27 +628,4 @@ document.addEventListener("DOMContentLoaded", function() {
   }
   
   window.addEventListener("beforeunload", saveGameState);
-  
-  // ===============================
-  // Funkcja zapisu danych użytkownika do Firebase
-  // ===============================
-  function updateUserData() {
-    if (!window.firebaseDatabase || !window.firebaseRef || !window.firebaseSet) {
-      console.error("Firebase nie został poprawnie zainicjalizowany!");
-      return;
-    }
-    window.firebaseSet(
-      window.firebaseRef(window.firebaseDatabase, 'users/' + username),
-      {
-        username: username,
-        level: currentLevel
-      }
-    )
-    .then(() => {
-      console.log("Dane użytkownika zapisane w Firebase.");
-    })
-    .catch((error) => {
-      console.error("Błąd zapisu danych do Firebase:", error);
-    });
-  }
 });
